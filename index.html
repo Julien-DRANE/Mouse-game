@@ -1,92 +1,25 @@
 <!DOCTYPE html>
-<html>
+<html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Jeu HTML5 Canvas Responsive + Bypass PC</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Petit Jeu de Plateforme</title>
   <style>
-    body, html {
-      margin: 0; 
+    body {
+      margin: 0;
       padding: 0;
-      width: 100%; 
-      height: 100%;
-      overflow: hidden; /* Pas de scroll */
-    }
-    
-    /* Par défaut, on ne masque rien : on suppose qu'on est sur PC */
-    #rotateMessage {
-      display: none;
-      position: absolute;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: rgba(0, 0, 0, 0.8);
-      color: #fff;
-      font-size: 1.5em;
+      background: #eee;
       display: flex;
-      justify-content: center; 
+      justify-content: center;
       align-items: center;
-      text-align: center;
-      z-index: 10;
+      height: 100vh;
     }
-    #gameCanvas {
-      display: block;
-    }
-    
-    /* Sur mobile (ou si on force le style), on gère le mode portrait */
-    /* Le CSS ci-dessous sera appliqué UNIQUEMENT si on détecte un mobile
-       et qu'il est en orientation portrait */
-    @media screen and (orientation: portrait) {
-      /* On prévoit des classes spécifiques que l'on activera en JS */
-      .mobile #rotateMessage {
-        display: flex;
-      }
-      .mobile #gameCanvas {
-        display: none;
-      }
+    canvas {
+      border: 2px solid #000;
     }
   </style>
 </head>
-<body id="bodyElement">
-  <div id="rotateMessage">Veuillez pivoter votre téléphone en mode paysage pour jouer.</div>
-  <canvas id="gameCanvas"></canvas>
-
-  <script>
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
-    
-    // --- 1) Détection (simple) d'un appareil mobile ---
-    // Attention : ce n'est jamais 100% fiable, mais c'est pratique
-    function isMobileDevice() {
-      return /Mobi|Android|iPhone|iPad|iPod|webOS|BlackBerry/i.test(navigator.userAgent);
-    }
-
-    // --- 2) Selon la détection, on ajoute (ou pas) la classe "mobile" au <body> ---
-    const bodyElt = document.getElementById('bodyElement');
-    if (isMobileDevice()) {
-      bodyElt.classList.add('mobile');
-    }
-    // Si on n'est pas mobile, on ne met pas la classe "mobile".
-    // => Le CSS @media (orientation: portrait) n’affichera PAS le rotateMessage.
-
-    // --- 3) Rendre le canvas responsive ---
-    function resizeCanvas() {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    }
-    window.addEventListener('resize', resizeCanvas);
-    resizeCanvas(); // appel initial
-
-    // --- 4) Boucle de jeu / Demo ---
-    function gameLoop() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      // Dessin exemple :
-      ctx.fillStyle = "#0095DD";
-      ctx.font = "30px Arial";
-      ctx.fillText("Hello, Canvas!", 50, 50);
-
-      requestAnimationFrame(gameLoop);
-    }
-    requestAnimationFrame(gameLoop);
-  </script>
+<body>
+  <canvas id="gameCanvas" width="800" height="400"></canvas>
+  <script src="platformer.js"></script>
 </body>
 </html>
