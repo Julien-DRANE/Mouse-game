@@ -1,14 +1,15 @@
+/* Remise à zéro + configuration du viewport mobile */
 html, body {
     margin: 0;
     padding: 0;
     width: 100%;
-    /* Remplacez 100vh par : */
+    /* Pour mieux gérer la barre d'URL mobile, on peut essayer 100svh */
     height: 100svh; /* ou min(100svh, 100vh) */
     overflow: hidden;
     background: #eee;
   }
   
-  /* Pour les devices iOS avec safe area */
+  /* Pour les devices iOS avec safe area (encoches, etc.) */
   @supports(padding: env(safe-area-inset-top)) {
     body {
       padding-bottom: env(safe-area-inset-bottom);
@@ -18,10 +19,13 @@ html, body {
     }
   }
   
+  /* Style du canvas */
   canvas {
     display: block;
     margin: 0 auto;
-    background: #999;
-    /* Pas forcément besoin de width:100%; height:100%; si on gère en JS */
+    background: #999; /* Exemple de fond gris clair pour le canvas */
+    /* Pas forcément besoin de width: 100%; height: 100%; 
+       si vous gérez la taille (800x400) directement dans l'attribut HTML
+       ou via JavaScript */
   }
   
