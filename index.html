@@ -1,45 +1,25 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <title>Mouse trap</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <title>Petit Jeu de Plateforme</title>
   <style>
-    html, body {
-      margin: 0; padding: 0; 
-      width: 100%; height: 100%;
+    body {
+      margin: 0;
+      padding: 0;
       background: #eee;
-      overflow: hidden; 
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
     }
-    #gameCanvas {
-      display: block;
-      width: 100%;
-      height: 100%;
-      background: #aaa;
+    canvas {
+      border: 2px solid #000;
     }
   </style>
 </head>
 <body>
-  <canvas id="gameCanvas"></canvas>
-  <!-- Votre script avec la logique du jeu -->
+  <canvas id="gameCanvas" width="800" height="400"></canvas>
   <script src="platformer.js"></script>
-  <script>
-    const canvas = document.getElementById("gameCanvas");
-    const ctx = canvas.getContext("2d");
-
-    function resizeCanvas() {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    }
-    window.addEventListener("resize", resizeCanvas);
-    resizeCanvas(); // init
-
-    // Si votre `platformer.js` se contente d'exécuter sa logique
-    // (ex. avec un `init()` ou un `requestAnimationFrame(gameLoop)`), 
-    // vous n'avez rien à faire de plus ici.
-    // Sinon, appelez explicitement vos fonctions, par exemple :
-    // initGame();
-    // requestAnimationFrame(gameLoop);
-  </script>
 </body>
 </html>
