@@ -2,7 +2,11 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Petit Jeu de Plateforme</title>
+  <title>Petit Jeu de Plateforme - Tactile & Sans Zoom</title>
+
+  <!-- Bloque le pinch-zoom (user-scalable=no) et la mise à l'échelle max -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+
   <style>
     body {
       margin: 0;
@@ -19,7 +23,10 @@
   </style>
 </head>
 <body>
+  <!-- Canvas fixe 800x400, centré sur l'écran -->
   <canvas id="gameCanvas" width="800" height="400"></canvas>
+  
+  <!-- Votre script de jeu -->
   <script src="platformer.js"></script>
 </body>
 </html>

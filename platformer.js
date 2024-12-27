@@ -34,9 +34,9 @@ const ground2 = new Image();
 ground2.src = "images/surface2.png";
 
 // Positions (on a 2 tuiles pour CHAQUE image de sol)
-let ground1X1 = 0, ground1X2 = WIDTH;  // Tuiles pour ground1
-let ground2X1 = 0, ground2X2 = WIDTH;  // Tuiles pour ground2
-// Vitesse de défilement plus rapide que l'arrière-plan
+let ground1X1 = 0, ground1X2 = WIDTH;  
+let ground2X1 = 0, ground2X2 = WIDTH;  
+// Vitesse de défilement (3x plus rapide que l'arrière-plan)
 let groundSpeed = backgroundSpeed * 3;
 
 // Position verticale du sol et sa hauteur
@@ -46,29 +46,23 @@ const groundHeight = 50;
 /**************************************************
  * 4) Paramètres du cross-fade global
  **************************************************/
-// La même variable `fade` va faire la transition
-// de background1 -> background2 ET de ground1 -> ground2
-let fade = 0;                 // de 0 à 1
-let fadeDuration = 500;     // 10 secondes pour passer de 0 à 1 (ajustez)
+let fade = 0;               // de 0 à 1
+let fadeDuration = 500;     // 0.5s pour passer de 0 à 1 (ajustez)
 let fadeStartTime = null;
-let transitionActive = true;  // si on veut activer la transition
+let transitionActive = true;
 
 /**************************************************
  * 5) Obstacles (à images)
  **************************************************/
-// Ex.: un ou plusieurs fichiers d’obstacle
 const obstacleImages = [
-  { src: "images/obstacle1.png", width: 70, height: 70 },
-  // { src: "images/obstacle2.png", width: 60, height: 60 },
-  // etc.
+  { src: "images/obstacle1.png", width: 70, height: 70 }
 ];
-const loadedObstacleImages = []; // contiendra les <img> chargées
+const loadedObstacleImages = [];
 
-// Tableau des obstacles présents à l'écran
 const obstacles = [];
-let obstacleInterval = 2000; // apparait tous les 2s
+let obstacleInterval = 2000; 
 let lastObstacleTime = 0;
-let gameSpeed = 5; // vitesse de défilement horizontal des obstacles
+let gameSpeed = 5; 
 
 /**************************************************
  * 6) Joueur (3 frames d'animation)
@@ -78,12 +72,10 @@ playerImages[0].src = "images/player1.png";
 playerImages[1].src = "images/player2.png";
 playerImages[2].src = "images/player3.png";
 
-// Animation
 let currentFrame = 0;
 let frameInterval = 100;  // 100ms/frame
 let lastFrameTime = 0;
 
-// Propriétés du joueur
 const player = {
   x: 50,
   y: HEIGHT - 100,
@@ -107,25 +99,26 @@ let gameOver = false;
  * 8) Initialisation du jeu
  **************************************************/
 function init() {
-  // Événement pour sauter
+  // 1) Gérer le saut via clavier
   document.addEventListener('keydown', handleJump);
 
-  // 1) Charger background1, background2
-  // 2) Charger ground1, ground2
-  // 3) Charger player (3 frames)
-  // 4) Charger obstacles
+  // 2) Gérer le saut via tactile
+  //    => On écoute "touchstart" pour déclencher un saut
+  document.addEventListener('touchstart', handleTouchJump, { passive: false });
+
+  // Charger toutes les images
   const totalImages = 2 + 2 + 3 + obstacleImages.length; 
   let loadedCount = 0;
 
-  // Charger BG
+  // BG
   background1.onload = onImgLoad;
   background2.onload = onImgLoad;
-  // Charger sol
+  // Sol
   ground1.onload = onImgLoad;
   ground2.onload = onImgLoad;
-  // Charger personnage
+  // Joueur
   playerImages.forEach(img => img.onload = onImgLoad);
-  // Charger obstacles
+  // Obstacles
   obstacleImages.forEach((obs, i) => {
     const img = new Image();
     img.src = obs.src;
@@ -154,43 +147,33 @@ function gameLoop(timestamp) {
     return;
   }
 
-  // 1) Effacer le canvas
   ctx.clearRect(0, 0, WIDTH, HEIGHT);
 
-  // 2) Gérer la progression du fade (si actif)
   if (transitionActive) {
     updateFade(timestamp);
   }
 
-  // 3) Arrière-plan (scroll)
   updateBackground();
   drawBackgroundCrossFade();
 
-  // 4) Sol (scroll)
   updateGround();
   drawGroundCrossFade();
 
-  // 5) Joueur
   updatePlayer(timestamp);
   drawPlayer();
 
-  // 6) Obstacles
   manageObstacles(timestamp);
   updateObstacles();
   drawObstacles();
 
-  // 7) Collisions
   checkCollisions();
-
-  // 8) Score
   afficherScore();
 
-  // Boucle
   requestAnimationFrame(gameLoop);
 }
 
 /**************************************************
- * 10) Update du fade (0 → 1)
+ * 10) Update du fade
  **************************************************/
 function updateFade(timestamp) {
   if (!fadeStartTime) {
@@ -205,72 +188,51 @@ function updateFade(timestamp) {
 }
 
 /**************************************************
- * 11) Arrière-plan (défilement + cross-fade)
+ * 11) Arrière-plan
  **************************************************/
 function updateBackground() {
   bg1X -= backgroundSpeed;
   bg2X -= backgroundSpeed;
-  if (bg1X <= -WIDTH) {
-    bg1X = WIDTH;
-  }
-  if (bg2X <= -WIDTH) {
-    bg2X = WIDTH;
-  }
+  if (bg1X <= -WIDTH) bg1X = WIDTH;
+  if (bg2X <= -WIDTH) bg2X = WIDTH;
 }
 
 function drawBackgroundCrossFade() {
-  // On utilise globalAlpha
   ctx.save();
-  // Dessin du background1 (opacité = 1 - fade)
   ctx.globalAlpha = 1 - fade;
   ctx.drawImage(background1, bg1X, 0, WIDTH, HEIGHT);
   ctx.drawImage(background1, bg2X, 0, WIDTH, HEIGHT);
 
-  // Dessin du background2 (opacité = fade)
   ctx.globalAlpha = fade;
   ctx.drawImage(background2, bg1X, 0, WIDTH, HEIGHT);
   ctx.drawImage(background2, bg2X, 0, WIDTH, HEIGHT);
-
   ctx.restore();
 }
 
 /**************************************************
- * 12) Sol : 2 images, défilement + cross-fade
+ * 12) Sol
  **************************************************/
 function updateGround() {
-  // Sol 1
   ground1X1 -= groundSpeed;
   ground1X2 -= groundSpeed;
-  if (ground1X1 <= -WIDTH) {
-    ground1X1 = ground1X2 + WIDTH;
-  }
-  if (ground1X2 <= -WIDTH) {
-    ground1X2 = ground1X1 + WIDTH;
-  }
+  if (ground1X1 <= -WIDTH) ground1X1 = ground1X2 + WIDTH;
+  if (ground1X2 <= -WIDTH) ground1X2 = ground1X1 + WIDTH;
 
-  // Sol 2
   ground2X1 -= groundSpeed;
   ground2X2 -= groundSpeed;
-  if (ground2X1 <= -WIDTH) {
-    ground2X1 = ground2X2 + WIDTH;
-  }
-  if (ground2X2 <= -WIDTH) {
-    ground2X2 = ground2X1 + WIDTH;
-  }
+  if (ground2X1 <= -WIDTH) ground2X1 = ground2X2 + WIDTH;
+  if (ground2X2 <= -WIDTH) ground2X2 = ground2X1 + WIDTH;
 }
 
 function drawGroundCrossFade() {
   ctx.save();
-  // ground1 (opacité = 1 - fade)
   ctx.globalAlpha = 1 - fade;
   ctx.drawImage(ground1, ground1X1, groundY, WIDTH, groundHeight);
   ctx.drawImage(ground1, ground1X2, groundY, WIDTH, groundHeight);
 
-  // ground2 (opacité = fade)
   ctx.globalAlpha = fade;
   ctx.drawImage(ground2, ground2X1, groundY, WIDTH, groundHeight);
   ctx.drawImage(ground2, ground2X2, groundY, WIDTH, groundHeight);
-
   ctx.restore();
 }
 
@@ -278,17 +240,16 @@ function drawGroundCrossFade() {
  * 13) Joueur
  **************************************************/
 function updatePlayer(timestamp) {
-  // Animation de la course
+  // Animation
   if (timestamp - lastFrameTime > frameInterval) {
     lastFrameTime = timestamp;
     currentFrame = (currentFrame + 1) % playerImages.length;
   }
 
-  // Gravité
   player.y += player.vy;
   player.vy += gravity;
 
-  // Ne pas dépasser le "sol"
+  // Ne pas tomber sous le sol
   if (player.y + player.height >= HEIGHT) {
     player.y = HEIGHT - player.height;
     player.vy = 0;
@@ -307,10 +268,23 @@ function drawPlayer() {
 }
 
 /**************************************************
- * 14) Saut
+ * 14) Saut - clavier
  **************************************************/
 function handleJump(e) {
   if ((e.code === "Space" || e.code === "ArrowUp") && !player.jumping) {
+    player.vy = -jumpStrength;
+    player.jumping = true;
+  }
+}
+
+/**************************************************
+ * 14bis) Saut - tactile
+ **************************************************/
+function handleTouchJump(e) {
+  // Empêche l'éventuel défilement ou zoom
+  e.preventDefault();
+
+  if (!player.jumping) {
     player.vy = -jumpStrength;
     player.jumping = true;
   }
@@ -321,11 +295,9 @@ function handleJump(e) {
  **************************************************/
 function manageObstacles(timestamp) {
   if (timestamp - lastObstacleTime > obstacleInterval) {
-    // Choisir un obstacle aléatoire
     const randIndex = Math.floor(Math.random() * loadedObstacleImages.length);
     const obsData = loadedObstacleImages[randIndex];
 
-    // Créer l'obstacle
     obstacles.push({
       x: WIDTH,
       y: HEIGHT - obsData.height,
@@ -341,7 +313,6 @@ function updateObstacles() {
   obstacles.forEach(obs => {
     obs.x -= gameSpeed;
   });
-  // Sortis de l'écran ?
   for (let i = obstacles.length - 1; i >= 0; i--) {
     if (obstacles[i].x + obstacles[i].width < 0) {
       obstacles.splice(i, 1);
