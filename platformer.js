@@ -219,12 +219,12 @@ document.addEventListener('DOMContentLoaded', () => {
      * 14) Fonction pour réinitialiser la position du joueur
      **************************************************/
     function resetPlayerPosition() {
+        console.log("Réinitialisation de la position du joueur.");
         player.x = 50;
         player.y = HEIGHT - 100;
         player.vy = 0;
         player.jumping = false;
         jumpCount = 0;
-        console.log("Position du joueur réinitialisée.");
     }
 
     /**************************************************
@@ -252,7 +252,12 @@ document.addEventListener('DOMContentLoaded', () => {
         resetPlayerPosition();
     }
 
-    window.addEventListener('resize', resizeCanvas);
+    // Dé-bounce pour limiter les redimensionnements excessifs
+    let resizeTimeout;
+    window.addEventListener('resize', () => {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(resizeCanvas, 200);
+    });
     resizeCanvas();
 
     /**************************************************
