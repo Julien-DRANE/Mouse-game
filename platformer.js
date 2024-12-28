@@ -144,45 +144,39 @@ document.addEventListener('DOMContentLoaded', () => {
   const CHEESE_HEIGHT = 32;
 
   // On gagne 1 vie tous les 20 fromages
-  const CHEESES_FOR_EXTRA_LIFE = 10;
+  const CHEESES_FOR_EXTRA_LIFE = 20;
 
   /**************************************************
    * 12) Audio
    **************************************************/
   // 3 sons : musique, collision, saut
-  let music = new Audio("sounds/music.mp3");
+  let music = new Audio();
+  music.loop = true;
+  music.volume = 0.2;
+
+  // Ajouter des sources multiples pour une meilleure compatibilité
+  const mp3Source = document.createElement('source');
+  mp3Source.src = "sounds/music.mp3";
+  mp3Source.type = "audio/mpeg";
+  music.appendChild(mp3Source);
+
+  const oggSource = document.createElement('source');
+  oggSource.src = "sounds/music.ogg"; // Assurez-vous que ce fichier existe
+  oggSource.type = "audio/ogg";
+  music.appendChild(oggSource);
+
+  music.load();
+
   let outchSound = new Audio("sounds/outch.mp3");
   let jumpSound = new Audio("sounds/jump.mp3");
 
   // Config audio
-  music.loop = true;
-  music.volume = 0.2;    // Musique plus faible
   outchSound.volume = 1.0;
-  jumpSound.volume = 0.5;
+  jumpSound.volume = 1.0;
 
-  // On charge (optionnel)
-  music.load();
+  // Charger les sons
   outchSound.load();
   jumpSound.load();
-
-  // Démarrer la musique après interaction utilisateur
-  function enableAudio() {
-      console.log("Interaction utilisateur détectée, démarrage de la musique...");
-      music.play().then(() => {
-          console.log("Musique jouée avec succès");
-      }).catch(err => {
-          console.log("Impossible de jouer la musique :", err);
-      });
-
-      // Retirer les écouteurs après le démarrage de la musique
-      document.removeEventListener("keydown", enableAudio);
-      document.removeEventListener("mousedown", enableAudio);
-      document.removeEventListener("touchstart", enableAudio);
-  }
-
-  document.addEventListener("keydown", enableAudio);
-  document.addEventListener("mousedown", enableAudio);
-  document.addEventListener("touchstart", enableAudio, { passive: false });
 
   /**************************************************
    * 13) Collision “frôlable” (30%)
@@ -236,7 +230,10 @@ document.addEventListener('DOMContentLoaded', () => {
       const gameHeight = 400;
       const windowWidth = window.innerWidth;
       const windowHeight = window.innerHeight;
-      const scale = Math.min(windowWidth / gameWidth, windowHeight / gameHeight);
+      let scale = Math.min(windowWidth / gameWidth, windowHeight / gameHeight);
+
+      // Définir des limites pour le scaleFactor
+      scale = Math.max(1, Math.min(scale, 3)); // Ajustez selon vos besoins
 
       canvas.width = gameWidth * scale;
       canvas.height = gameHeight * scale;
@@ -313,8 +310,10 @@ document.addEventListener('DOMContentLoaded', () => {
           loadedCount++;
           console.log(`Image chargée : ${loadedCount}/${totalImages}`);
           if (loadedCount === totalImages) {
-              console.log("Toutes les images sont chargées. Démarrage de la boucle de jeu.");
-              requestAnimationFrame(gameLoop);
+              console.log("Toutes les images sont chargées. Prêt à démarrer.");
+              // Afficher le bouton de démarrage
+              const startButton = document.getElementById('startButton');
+              startButton.style.display = 'block';
           }
       }
   }
@@ -808,6 +807,9 @@ document.addEventListener('DOMContentLoaded', () => {
       restartButton.style.display = 'none';
       console.log("Bouton Rejouer masqué.");
 
+      // Réinitialiser le canvas
+      resizeCanvas();
+
       // Redémarrer la boucle de jeu
       requestAnimationFrame(gameLoop);
   });
@@ -841,4 +843,26 @@ document.addEventListener('DOMContentLoaded', () => {
    * 31) Lancement
    **************************************************/
   init();
+
+  /**************************************************
+   * 32) Bouton de Démarrage
+   **************************************************/
+  const startButton = document.getElementById('startButton');
+
+  startButton.addEventListener('click', () => {
+      console.log("Bouton de démarrage cliqué.");
+      
+      // Démarrer la musique
+      music.play().then(() => {
+          console.log("Musique jouée avec succès");
+          // Masquer le bouton de démarrage
+          startButton.classList.add('hidden');
+      }).catch(err => {
+          console.log("Impossible de jouer la musique :", err);
+          alert("Erreur lors de la lecture de la musique : " + err.message);
+      });
+
+      // Démarrer la boucle de jeu
+      requestAnimationFrame(gameLoop);
+  });
 });

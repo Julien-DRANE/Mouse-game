@@ -1,26 +1,28 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <title>Petit Jeu de Plateforme - Vies, Plateformes & Difficulté</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
-  
-  <!-- Lien vers le fichier CSS externe -->
-  <link rel="stylesheet" href="styles.css">
+    <meta charset="UTF-8">
+    <title>Mon Jeu de Plateforme</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- Optionnel : Supprimer ou ajouter une référence au favicon -->
+    <link rel="icon" href="data:,">
 </head>
 <body>
-  <!-- Canvas fixe 800x400 (pour la démo) -->
-  <canvas id="gameCanvas" width="800" height="400"></canvas>
-  
-  <!-- Message de rotation, affiché en portrait -->
-  <div id="rotateMessage">
-    Veuillez pivoter votre appareil en mode paysage.
-  </div>
-  
-  <!-- Bouton Rejouer, affiché en game over -->
-  <button id="restartButton">Rejouer</button>
-  
-  <!-- Script principal du jeu -->
-  <script src="platformer.js"></script>
+    <!-- Canvas fixe 800x400 (pour la démo) -->
+    <canvas id="gameCanvas" width="800" height="400"></canvas>
+    
+    <!-- Message de rotation, affiché en portrait -->
+    <div id="rotateMessage">
+      Veuillez pivoter votre appareil en mode paysage.
+    </div>
+    
+    <!-- Bouton Rejouer, affiché en game over -->
+    <button id="restartButton">Rejouer</button>
+    
+    <!-- Bouton de démarrage -->
+    <button id="startButton">Démarrer le Jeu</button>
+    
+    <!-- Script principal du jeu -->
+    <script src="platformer.js"></script>
 </body>
 </html>
