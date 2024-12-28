@@ -6,6 +6,100 @@ const ctx = canvas.getContext('2d');
 
 const WIDTH = canvas.width;
 const HEIGHT = canvas.height;
+/**************************************************
+ * Déclarations des sons
+ **************************************************/
+// On crée des objets Audio pour nos 3 sons
+let music = new Audio("sounds/music.mp3");
+let outchSound = new Audio("sounds/outch.mp3");
+let jumpSound = new Audio("sounds/jump.mp3");
+
+// Paramètres
+music.loop = true;        // musique en boucle
+music.volume = 0.2;       // volume bas (20%)
+outchSound.volume = 1.0;  // volume normal
+jumpSound.volume = 1.0;   // volume normal
+
+// Optionnel : si vous voulez précharger, vous pouvez faire un .load()
+music.load();
+outchSound.load();
+jumpSound.load();
+
+/**************************************************
+ * Démarrer la musique après un geste utilisateur
+ **************************************************/
+function enableAudio() {
+  music.play().catch((err) => {
+    console.log("Impossible de jouer la musique : ", err);
+  });
+  // On retire cet écouteur pour ne pas rejouer la musique sans cesse
+  document.removeEventListener("keydown", enableAudio);
+  document.removeEventListener("mousedown", enableAudio);
+  document.removeEventListener("touchstart", enableAudio);
+}
+
+// On attend un geste : un clic, un appui clavier, un toucher
+document.addEventListener("keydown", enableAudio);
+document.addEventListener("mousedown", enableAudio);
+document.addEventListener("touchstart", enableAudio, { passive: false });
+
+/**************************************************
+ * Utilisation des sons
+ **************************************************/
+// 1) Son de saut : dans votre fonction handleJumpKey / handleTouchJump
+function handleJumpKey(e) {
+  if (e.code === "Space" || e.code === "ArrowUp") {
+    if (jumpCount < 2) {
+      if (jumpCount === 0) {
+        player.vy = -jumpStrength;
+      } else {
+        player.vy = -jumpStrength2;
+      }
+      jumpCount++;
+      player.jumping = true;
+      // ---> On joue le son de saut
+      jumpSound.currentTime = 0; // remet à zéro si le son était en cours
+      jumpSound.play();
+    }
+  }
+}
+
+function handleTouchJump(e) {
+  e.preventDefault();
+  if (jumpCount < 2) {
+    if (jumpCount === 0) {
+      player.vy = -jumpStrength;
+    } else {
+      player.vy = -jumpStrength2;
+    }
+    jumpCount++;
+    player.jumping = true;
+    // ---> Son de saut
+    jumpSound.currentTime = 0;
+    jumpSound.play();
+  }
+}
+
+// 2) Son de collision : dans checkCollisions(), quand on heurte un obstacle
+function checkCollisions() {
+  for (let obs of obstacles) {
+    if (isColliding(player, obs)) {
+      // Collision
+      lives--;
+      obstacles.splice(obstacles.indexOf(obs), 1);
+
+      // ---> On joue le son de collision
+      outchSound.currentTime = 0;
+      outchSound.play();
+
+      if (lives <= 0) {
+        gameOver = true;
+      }
+      return;
+    }
+  }
+}
+
 
 /**************************************************
  * 2) Images du Décor (Cross-Fade ou non)
