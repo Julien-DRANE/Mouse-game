@@ -10,26 +10,168 @@
     <div id="gameOverContainer">
         <h1>GAME OVER</h1>
         <p id="finalScore">Score final : 0</p>
-        <button id="restartButton">Revenir au Menu</button>
+        
+        <!-- Tableau des meilleurs scores -->
+        <h2>Meilleurs Scores</h2>
+        <table id="highScoresTable">
+            <thead>
+                <tr>
+                    <th>Rang</th>
+                    <th>Score</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Les scores seront insérés ici dynamiquement -->
+            </tbody>
+        </table>
+        
+        <!-- Boutons de redirection -->
+        <button id="restartButton">Rejouer</button>
+        <button id="menuButton">Revenir au Menu</button>
+        <button id="resetScoresButton">Réinitialiser les Scores</button>
     </div>
     
-    <!-- Script pour gérer l'affichage du score et le bouton de redirection -->
+    <!-- Script pour gérer l'affichage du score, du tableau des scores et les boutons de redirection -->
     <script>
-        // Récupérer le score depuis l'URL
-        const params = new URLSearchParams(window.location.search);
-        const score = params.get('score') || 0;
+        // Vérifiez si le DOM est complètement chargé
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log("Page gameover.html chargée");
 
-        // Afficher le score
-        document.getElementById('finalScore').textContent = `Score final : ${score}`;
+            // Récupérer le score depuis l'URL
+            const params = new URLSearchParams(window.location.search);
+            const score = parseInt(params.get('score')) || 0;
+            console.log(`Score récupéré : ${score}`);
 
-        // Fonction pour revenir au menu
-        function goToMenu() {
-            window.location.href = 'index.html';
-        }
+            // Afficher le score
+            const finalScoreElement = document.getElementById('finalScore');
+            if (finalScoreElement) {
+                finalScoreElement.textContent = `Score final : ${score}`;
+                console.log("Score final affiché");
+            } else {
+                console.error("L'élément 'finalScore' n'existe pas dans le DOM.");
+            }
 
-        // Ajouter un écouteur d'événement pour le bouton de redirection
-        const restartButton = document.getElementById('restartButton');
-        restartButton.addEventListener('click', goToMenu);
+            // Fonction pour revenir au menu
+            function goToMenu() {
+                console.log("Redirection vers le menu");
+                window.location.href = 'index.html';
+            }
+
+            // Fonction pour rejouer
+            function replayGame() {
+                console.log("Redirection pour rejouer");
+                window.location.href = 'game.html';
+            }
+
+            // Ajouter des écouteurs d'événements pour les boutons
+            const restartButton = document.getElementById('restartButton');
+            const menuButton = document.getElementById('menuButton');
+            const resetScoresButton = document.getElementById('resetScoresButton');
+
+            if (restartButton && menuButton && resetScoresButton) {
+                restartButton.addEventListener('click', replayGame);
+                menuButton.addEventListener('click', goToMenu);
+                resetScoresButton.addEventListener('click', resetHighScores);
+                console.log("Écouteurs d'événements ajoutés aux boutons");
+            } else {
+                console.error("Un ou plusieurs boutons n'existent pas dans le DOM.");
+            }
+
+            // Gestion des High Scores
+            const MAX_HIGH_SCORES = 5; // Nombre maximum de scores à afficher
+            console.log(`Maximum de high scores : ${MAX_HIGH_SCORES}`);
+
+            // Fonction pour récupérer les high scores depuis localStorage
+            function getHighScores() {
+                const highScores = JSON.parse(localStorage.getItem('highScores')) || [];
+                console.log("High scores récupérés :", highScores);
+                return highScores;
+            }
+
+            // Fonction pour sauvegarder les high scores dans localStorage
+            function saveHighScores(highScores) {
+                localStorage.setItem('highScores', JSON.stringify(highScores));
+                console.log("High scores sauvegardés :", highScores);
+            }
+
+            // Fonction pour ajouter un nouveau score
+            function addHighScore(newScore) {
+                const highScores = getHighScores();
+
+                // Ajouter le nouveau score avec la date actuelle
+                highScores.push({ score: newScore, date: new Date().toLocaleString() });
+                console.log(`Nouveau score ajouté : ${newScore}`);
+
+                // Trier les scores par ordre décroissant
+                highScores.sort((a, b) => b.score - a.score);
+                console.log("High scores triés :", highScores);
+
+                // Garder seulement les meilleurs scores
+                if (highScores.length > MAX_HIGH_SCORES) {
+                    highScores.pop();
+                    console.log("Un score a été retiré pour maintenir le maximum");
+                }
+
+                // Sauvegarder les scores mis à jour
+                saveHighScores(highScores);
+            }
+
+            // Fonction pour afficher les high scores dans le tableau
+            function displayHighScores() {
+                const highScores = getHighScores();
+                const tbody = document.querySelector('#highScoresTable tbody');
+                if (!tbody) {
+                    console.error("L'élément tbody du tableau des high scores n'existe pas.");
+                    return;
+                }
+                tbody.innerHTML = ''; // Vider le tableau
+                console.log("Affichage des high scores dans le tableau");
+
+                highScores.forEach((entry, index) => {
+                    const tr = document.createElement('tr');
+
+                    const tdRank = document.createElement('td');
+                    tdRank.textContent = index + 1;
+                    tr.appendChild(tdRank);
+
+                    const tdScore = document.createElement('td');
+                    tdScore.textContent = entry.score;
+                    tr.appendChild(tdScore);
+
+                    const tdDate = document.createElement('td');
+                    tdDate.textContent = entry.date;
+                    tr.appendChild(tdDate);
+
+                    tbody.appendChild(tr);
+                    console.log(`Score ${index + 1} ajouté au tableau`);
+                });
+            }
+
+            // Ajouter le score actuel aux high scores et afficher le tableau
+            if (score > 0) {
+                addHighScore(score);
+            }
+            displayHighScores();
+
+            // Fonction pour réinitialiser les high scores
+            function resetHighScores() {
+                if (confirm("Voulez-vous vraiment réinitialiser les meilleurs scores ?")) {
+                    localStorage.removeItem('highScores');
+                    console.log("High scores réinitialisés");
+                    displayHighScores();
+                }
+            }
+
+            // **Ajouter la classe 'visible' au conteneur pour l'afficher**
+            const gameOverContainer = document.getElementById('gameOverContainer');
+            if (gameOverContainer) {
+                gameOverContainer.classList.add('visible');
+                console.log("gameOverContainer rendu visible");
+            } else {
+                console.error("Le conteneur 'gameOverContainer' n'existe pas dans le DOM.");
+            }
+        });
     </script>
 </body>
 </html>
