@@ -10,9 +10,8 @@ document.addEventListener('DOMContentLoaded', () => {
   let WIDTH = canvas.width;
   let HEIGHT = canvas.height;
 
-  // Définition de 'player' avant d'utiliser 'resizeCanvas'
   /**************************************************
-   * 7) Joueur : coordonnées, vitesse, double-saut
+   * 2) Joueur : coordonnées, vitesse, double-saut
    **************************************************/
   const player = {
       x: 50,
@@ -35,45 +34,26 @@ document.addEventListener('DOMContentLoaded', () => {
   let jumpCount = 0;
 
   /**************************************************
-   * Fonction pour réinitialiser la position du joueur
+   * 3) Vies (3) + image de coeur (life.png)
    **************************************************/
-  function resetPlayerPosition() {
-      player.x = 50;
-      player.y = HEIGHT - 100;
-      player.vy = 0;
-      player.jumping = false;
-      jumpCount = 0;
-      console.log("Position du joueur réinitialisée.");
-  }
-
-  // Fonction pour redimensionner le canvas en fonction de la fenêtre
-  function resizeCanvas() {
-      // Définir un ratio pour maintenir l'aspect du jeu (800x400)
-      const gameWidth = 800;
-      const gameHeight = 400;
-      const windowWidth = window.innerWidth;
-      const windowHeight = window.innerHeight;
-      const scale = Math.min(windowWidth / gameWidth, windowHeight / gameHeight);
-
-      canvas.width = gameWidth * scale;
-      canvas.height = gameHeight * scale;
-
-      // Mettre à jour les variables de jeu basées sur le scale
-      // Ceci assure que les éléments du jeu s'adaptent à la nouvelle taille
-      scaleFactor = scale;
-      WIDTH = canvas.width;
-      HEIGHT = canvas.height;
-      console.log(`Canvas redimensionné : width=${WIDTH}, height=${HEIGHT}, scaleFactor=${scaleFactor}`);
-
-      // Réinitialiser la position du joueur après redimensionnement
-      resetPlayerPosition();
-  }
-
-  window.addEventListener('resize', resizeCanvas);
-  resizeCanvas();
+  let lives = 3;
+  const lifeImage = new Image();
+  lifeImage.src = "images/life.png";
 
   /**************************************************
-   * 2) Images du Décor (Cross-Fade ou non)
+   * 4) État du jeu : score, gameOver
+   **************************************************/
+  let score = 0;
+  let gameOver = false;
+
+  /**************************************************
+   * 5) Timer de difficulté (toutes les 15s)
+   **************************************************/
+  let lastDifficultyIncrease = 0;
+  let difficultyInterval = 15000; // 15 secondes
+
+  /**************************************************
+   * 6) Images du Décor (Cross-Fade ou non)
    **************************************************/
   const background1 = new Image();
   background1.src = "images/background1.png";
@@ -91,7 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let transitionActive = true;
 
   /**************************************************
-   * 3) Sol (Cross-Fade)
+   * 7) Sol (Cross-Fade)
    **************************************************/
   const ground1 = new Image();
   ground1.src = "images/surface1.png";
@@ -107,7 +87,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const groundHeight = 50;
 
   /**************************************************
-   * 4) Obstacles
+   * 8) Obstacles
    **************************************************/
   const obstacleImages = [
       { src: "images/obstacle1.png", width: 70, height: 70 }
@@ -121,7 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let gameSpeed = 5; // Vitesse horizontale de défilement
 
   /**************************************************
-   * 5) Plateformes
+   * 9) Plateformes
    **************************************************/
   const platformImage = new Image();
   platformImage.src = "images/plateforme1.png"; // ex. 496×45
@@ -135,7 +115,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let lastPlatformTime = 0;
 
   /**************************************************
-   * 6) Joueur (3 frames d'animation)
+   * 10) Joueur (3 frames d'animation)
    **************************************************/
   const playerImages = [new Image(), new Image(), new Image()];
   playerImages[0].src = "images/player1.png";
@@ -147,57 +127,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let lastFrameTime = 0;
 
   /**************************************************
-   * 8) Vies (3) + image de coeur (life.png)
-   **************************************************/
-  let lives = 3;
-  const lifeImage = new Image();
-  lifeImage.src = "images/life.png";
-
-  /**************************************************
-   * 9) État du jeu : score, gameOver
-   **************************************************/
-  let score = 0;
-  let gameOver = false;
-
-  /**************************************************
-   * 10) Timer de difficulté (toutes les 15s)
-   **************************************************/
-  let lastDifficultyIncrease = 0;
-  let difficultyInterval = 15000; // 15 secondes
-
-  /**************************************************
-   * 11) Collision “frôlable” (30%)
-   **************************************************/
-  function isColliding(a, b) {
-      const margin = 0.3; // Réduit chaque boîte de 30%
-
-      // Box réduite pour 'a'
-      const shrinkWa = a.width * margin;
-      const shrinkHa = a.height * margin;
-      const ax = a.x + shrinkWa / 2;
-      const ay = a.y + shrinkHa / 2;
-      const aw = a.width - shrinkWa;
-      const ah = a.height - shrinkHa;
-
-      // Box réduite pour 'b'
-      const shrinkWb = b.width * margin;
-      const shrinkHb = b.height * margin;
-      const bx = b.x + shrinkWb / 2;
-      const by = b.y + shrinkHb / 2;
-      const bw = b.width - shrinkWb;
-      const bh = b.height - shrinkHb;
-
-      // Test AABB
-      return (
-          ax < bx + bw &&
-          ax + aw > bx &&
-          ay < by + bh &&
-          ay + ah > by
-      );
-  }
-
-  /**************************************************
-   * 12) Fromages (à ramasser)
+   * 11) Fromages (à ramasser)
    **************************************************/
   const cheeseImage = new Image();
   cheeseImage.src = "images/fromage.png";
@@ -217,7 +147,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const CHEESES_FOR_EXTRA_LIFE = 20;
 
   /**************************************************
-   * 13) Audio
+   * 12) Audio
    **************************************************/
   // 3 sons : musique, collision, saut
   let music = new Audio("sounds/music.mp3");
@@ -255,7 +185,78 @@ document.addEventListener('DOMContentLoaded', () => {
   document.addEventListener("touchstart", enableAudio, { passive: false });
 
   /**************************************************
-   * 14) Initialisation du jeu
+   * 13) Collision “frôlable” (30%)
+   **************************************************/
+  function isColliding(a, b) {
+      const margin = 0.3; // Réduit chaque boîte de 30%
+
+      // Box réduite pour 'a'
+      const shrinkWa = a.width * margin;
+      const shrinkHa = a.height * margin;
+      const ax = a.x + shrinkWa / 2;
+      const ay = a.y + shrinkHa / 2;
+      const aw = a.width - shrinkWa;
+      const ah = a.height - shrinkHa;
+
+      // Box réduite pour 'b'
+      const shrinkWb = b.width * margin;
+      const shrinkHb = b.height * margin;
+      const bx = b.x + shrinkWb / 2;
+      const by = b.y + shrinkHb / 2;
+      const bw = b.width - shrinkWb;
+      const bh = b.height - shrinkHb;
+
+      // Test AABB
+      return (
+          ax < bx + bw &&
+          ax + aw > bx &&
+          ay < by + bh &&
+          ay + ah > by
+      );
+  }
+
+  /**************************************************
+   * 14) Fonction pour réinitialiser la position du joueur
+   **************************************************/
+  function resetPlayerPosition() {
+      player.x = 50;
+      player.y = HEIGHT - 100;
+      player.vy = 0;
+      player.jumping = false;
+      jumpCount = 0;
+      console.log("Position du joueur réinitialisée.");
+  }
+
+  /**************************************************
+   * 15) Fonction pour redimensionner le canvas
+   **************************************************/
+  function resizeCanvas() {
+      // Définir un ratio pour maintenir l'aspect du jeu (800x400)
+      const gameWidth = 800;
+      const gameHeight = 400;
+      const windowWidth = window.innerWidth;
+      const windowHeight = window.innerHeight;
+      const scale = Math.min(windowWidth / gameWidth, windowHeight / gameHeight);
+
+      canvas.width = gameWidth * scale;
+      canvas.height = gameHeight * scale;
+
+      // Mettre à jour les variables de jeu basées sur le scale
+      // Ceci assure que les éléments du jeu s'adaptent à la nouvelle taille
+      scaleFactor = scale;
+      WIDTH = canvas.width;
+      HEIGHT = canvas.height;
+      console.log(`Canvas redimensionné : width=${WIDTH}, height=${HEIGHT}, scaleFactor=${scaleFactor}`);
+
+      // Réinitialiser la position du joueur après redimensionnement
+      resetPlayerPosition();
+  }
+
+  window.addEventListener('resize', resizeCanvas);
+  resizeCanvas();
+
+  /**************************************************
+   * 16) Initialisation du jeu
    **************************************************/
   function init() {
       console.log("Initialisation du jeu...");
@@ -314,7 +315,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /**************************************************
-   * 15) Boucle de jeu
+   * 17) Boucle de jeu
    **************************************************/
   function gameLoop(timestamp) {
       if (gameOver) {
@@ -365,7 +366,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /**************************************************
-   * 16) Cross-Fade (Décor & Sol)
+   * 18) Cross-Fade (Décor & Sol)
    **************************************************/
   function updateFade(timestamp) {
       if (!fadeStartTime) fadeStartTime = timestamp;
@@ -426,7 +427,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /**************************************************
-   * 17) Joueur
+   * 19) Joueur
    **************************************************/
   function updatePlayer(timestamp) {
       // Animation
@@ -483,7 +484,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /**************************************************
-   * 18) Double-Saut
+   * 20) Double-Saut
    **************************************************/
   function handleJumpKey(e) {
       if (e.code === "Space" || e.code === "ArrowUp") {
@@ -531,7 +532,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /**************************************************
-   * 19) Plateformes
+   * 21) Plateformes
    **************************************************/
   function spawnPlatform() {
       let spawnY = 150 + Math.random() * 100;
@@ -576,7 +577,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /**************************************************
-   * 20) Obstacles
+   * 22) Obstacles
    **************************************************/
   function manageObstacles(timestamp) {
       if (timestamp - lastObstacleTime > obstacleInterval) {
@@ -619,7 +620,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /**************************************************
-   * 21) Collisions (obstacles) => Perte de vie
+   * 23) Collisions (obstacles) => Perte de vie
    **************************************************/
   function checkCollisions() {
       for (let obs of obstacles) {
@@ -649,7 +650,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /**************************************************
-   * 22) Fromages
+   * 24) Fromages
    **************************************************/
   function manageCheeses(timestamp) {
       if (timestamp - lastCheeseTime > cheeseInterval) {
@@ -695,7 +696,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /**************************************************
-   * 23) Collision avec Fromages
+   * 25) Collision avec Fromages
    **************************************************/
   function checkCheeseCollisions() {
       for (let i = cheeses.length - 1; i >= 0; i--) {
@@ -716,7 +717,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /**************************************************
-   * 24) Affichage : score, vies, fromages
+   * 26) Affichage : score, vies, fromages
    **************************************************/
   function afficherScore() {
       ctx.save();
@@ -748,7 +749,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /**************************************************
-   * 25) Fin de jeu
+   * 27) Fin de jeu
    **************************************************/
   function afficherGameOver() {
       ctx.save();
@@ -766,7 +767,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /**************************************************
-   * 26) Afficher le bouton Rejouer
+   * 28) Afficher le bouton Rejouer
    **************************************************/
   function afficherRestartButton() {
       const restartButton = document.getElementById('restartButton');
@@ -775,7 +776,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /**************************************************
-   * 27) Gestion du Bouton Rejouer
+   * 29) Gestion du Bouton Rejouer
    **************************************************/
   document.getElementById('restartButton').addEventListener('click', () => {
       console.log("Bouton Rejouer cliqué. Réinitialisation du jeu.");
@@ -807,7 +808,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   /**************************************************
-   * 28) Gestion de la Difficulté
+   * 30) Gestion de la Difficulté
    **************************************************/
   function handleDifficulty(timestamp) {
       if (timestamp - lastDifficultyIncrease > difficultyInterval) {
@@ -832,7 +833,12 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /**************************************************
-   * 29) Lancement
+   * 31) Fonctions de Gestion des Fromages
+   **************************************************/
+  // (Déjà inclus ci-dessus)
+
+  /**************************************************
+   * 32) Lancement
    **************************************************/
   init();
 });
