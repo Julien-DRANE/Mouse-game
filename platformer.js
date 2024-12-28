@@ -8,51 +8,41 @@ const WIDTH = canvas.width;
 const HEIGHT = canvas.height;
 
 /**************************************************
- * 2) Arrière-plans (avec cross-fade)
+ * 2) Images du Décor (Cross-Fade ou non)
  **************************************************/
-// Deux images de décor (le “ciel” lointain)
 const background1 = new Image();
 background1.src = "images/background1.png";
 
 const background2 = new Image();
 background2.src = "images/background2.png";
 
-// Positions de défilement pour chaque image
-let bg1X = 0;
-let bg2X = WIDTH;
-// Vitesse de défilement (ex: 2 px/frame)
-let backgroundSpeed = 2;
+let bg1X = 0, bg2X = WIDTH;
+let backgroundSpeed = 2; // Décor lointain
+
+// Cross-fade
+let fade = 0;
+let fadeDuration = 500;
+let fadeStartTime = null;
+let transitionActive = true;
 
 /**************************************************
- * 3) Sol avec cross-fade
+ * 3) Sol (Cross-Fade)
  **************************************************/
-// Deux images de sol (surface1, surface2)
 const ground1 = new Image();
 ground1.src = "images/surface1.png";
 
 const ground2 = new Image();
 ground2.src = "images/surface2.png";
 
-// Positions (on a 2 tuiles pour CHAQUE image de sol)
-let ground1X1 = 0, ground1X2 = WIDTH;  
-let ground2X1 = 0, ground2X2 = WIDTH;  
-// Vitesse de défilement (3x plus rapide que l'arrière-plan)
+let ground1X1 = 0, ground1X2 = WIDTH;
+let ground2X1 = 0, ground2X2 = WIDTH;
 let groundSpeed = backgroundSpeed * 3;
 
-// Position verticale du sol et sa hauteur
 const groundY = 350;
 const groundHeight = 50;
 
 /**************************************************
- * 4) Paramètres du cross-fade global
- **************************************************/
-let fade = 0;               // de 0 à 1
-let fadeDuration = 500;     // 0.5s pour passer de 0 à 1 (ajustez)
-let fadeStartTime = null;
-let transitionActive = true;
-
-/**************************************************
- * 5) Obstacles (à images)
+ * 4) Obstacles
  **************************************************/
 const obstacleImages = [
   { src: "images/obstacle1.png", width: 70, height: 70 }
@@ -60,9 +50,24 @@ const obstacleImages = [
 const loadedObstacleImages = [];
 
 const obstacles = [];
-let obstacleInterval = 2000; 
+let obstacleIntervalBase = 2000; 
+let obstacleInterval = obstacleIntervalBase;
 let lastObstacleTime = 0;
-let gameSpeed = 5; 
+let gameSpeed = 5;
+
+/**************************************************
+ * 5) Plateformes
+ **************************************************/
+const platformImage = new Image();
+platformImage.src = "images/plateforme1.png"; // 496×45
+
+const platforms = [];
+const PLATFORM_WIDTH = 496;
+const PLATFORM_HEIGHT = 45;
+
+let platformIntervalBase = 4000; 
+let platformInterval = platformIntervalBase;
+let lastPlatformTime = 0;
 
 /**************************************************
  * 6) Joueur (3 frames d'animation)
@@ -73,9 +78,12 @@ playerImages[1].src = "images/player2.png";
 playerImages[2].src = "images/player3.png";
 
 let currentFrame = 0;
-let frameInterval = 100;  // 100ms/frame
+let frameInterval = 100;
 let lastFrameTime = 0;
 
+/**************************************************
+ * 7) Joueur : Coordonnées, Vitesse, Double-Saut
+ **************************************************/
 const player = {
   x: 50,
   y: HEIGHT - 100,
@@ -85,40 +93,112 @@ const player = {
   jumping: false
 };
 
-// Physique
+// Gravité
 const gravity = 0.5;
+
+// Saut principal
 const jumpStrength = 12;
+// Deuxième saut (moins fort)
+const jumpStrength2 = 8;
+
+// Combien de sauts on a déjà fait (0, 1 ou 2 max)
+let jumpCount = 0;
 
 /**************************************************
- * 7) État du jeu
+ * 8) Vies (3) + coeur life.png
+ **************************************************/
+let lives = 3;
+const lifeImage = new Image();
+lifeImage.src = "images/life.png";
+
+/**************************************************
+ * 9) État du jeu (score + gameOver)
  **************************************************/
 let score = 0;
 let gameOver = false;
 
 /**************************************************
- * 8) Initialisation du jeu
+ * 10) Timer de difficulté (toutes les 15s)
+ **************************************************/
+let lastDifficultyIncrease = 0;
+let difficultyInterval = 15000; // 15s
+
+/**************************************************
+ * 11) Collision "frôlable" (30%)
+ **************************************************/
+function isColliding(a, b) {
+  const margin = 0.3; // Réduit la box de 30%
+
+  // Box réduite pour 'a'
+  const shrinkWa = a.width * margin;
+  const shrinkHa = a.height * margin;
+  const ax = a.x + shrinkWa / 2;
+  const ay = a.y + shrinkHa / 2;
+  const aw = a.width - shrinkWa;
+  const ah = a.height - shrinkHa;
+
+  // Box réduite pour 'b'
+  const shrinkWb = b.width * margin;
+  const shrinkHb = b.height * margin;
+  const bx = b.x + shrinkWb / 2;
+  const by = b.y + shrinkHb / 2;
+  const bw = b.width - shrinkWb;
+  const bh = b.height - shrinkHb;
+
+  return (
+    ax < bx + bw &&
+    ax + aw > bx &&
+    ay < by + bh &&
+    ay + ah > by
+  );
+}
+
+/**************************************************
+ * 12) Fromages (Items à ramasser)
+ **************************************************/
+// Image du fromage
+const cheeseImage = new Image();
+cheeseImage.src = "images/fromage.png"; // dimension ?
+
+// Tableau des fromages
+const cheeses = [];
+let cheeseCount = 0; // combien de fromages ramassés
+
+// Apparition aléatoire
+let lastCheeseTime = 0;
+let cheeseIntervalBase = 3000; 
+let cheeseInterval = cheeseIntervalBase;
+
+// On peut décider d'une taille fixe pour le fromage
+const CHEESE_WIDTH = 32;
+const CHEESE_HEIGHT = 32;
+
+// Nombre de fromages requis pour gagner 1 vie
+const CHEESES_FOR_EXTRA_LIFE = 20;
+
+/**************************************************
+ * 13) Initialisation
  **************************************************/
 function init() {
-  // 1) Gérer le saut via clavier
-  document.addEventListener('keydown', handleJump);
-
-  // 2) Gérer le saut via tactile
-  //    => On écoute "touchstart" pour déclencher un saut
+  document.addEventListener('keydown', handleJumpKey);
   document.addEventListener('touchstart', handleTouchJump, { passive: false });
 
-  // Charger toutes les images
-  const totalImages = 2 + 2 + 3 + obstacleImages.length; 
+  // Charger les images
+  let totalImages = 2 + 2 + 3 + obstacleImages.length + 1 + 1 + 1; 
+  // +1 pour la platform, +1 pour la vie, +1 pour le fromage
   let loadedCount = 0;
 
-  // BG
   background1.onload = onImgLoad;
   background2.onload = onImgLoad;
-  // Sol
   ground1.onload = onImgLoad;
   ground2.onload = onImgLoad;
-  // Joueur
-  playerImages.forEach(img => img.onload = onImgLoad);
-  // Obstacles
+  platformImage.onload = onImgLoad;
+  lifeImage.onload = onImgLoad;
+  cheeseImage.onload = onImgLoad;
+
+  playerImages.forEach(img => {
+    img.onload = onImgLoad;
+  });
   obstacleImages.forEach((obs, i) => {
     const img = new Image();
     img.src = obs.src;
@@ -139,7 +219,7 @@ function init() {
 }
 
 /**************************************************
- * 9) Boucle principale du jeu
+ * 14) Boucle de jeu
  **************************************************/
 function gameLoop(timestamp) {
   if (gameOver) {
@@ -162,24 +242,39 @@ function gameLoop(timestamp) {
   updatePlayer(timestamp);
   drawPlayer();
 
+  managePlatforms(timestamp);
+  updatePlatforms();
+  drawPlatforms();
+
   manageObstacles(timestamp);
   updateObstacles();
   drawObstacles();
 
+  // Fromages
+  manageCheeses(timestamp);
+  updateCheeses();
+  drawCheeses();
+
+  // Collisions
   checkCollisions();
+  checkCheeseCollisions(); // ramasser fromages
+
+  // Score, Vies, Fromages
   afficherScore();
+  afficherVies();
+  afficherCheeseCount();
+
+  handleDifficulty(timestamp);
 
   requestAnimationFrame(gameLoop);
 }
 
 /**************************************************
- * 10) Update du fade
+ * 15) Cross-Fade (Décor & Sol)
  **************************************************/
 function updateFade(timestamp) {
-  if (!fadeStartTime) {
-    fadeStartTime = timestamp;
-  }
-  const elapsed = timestamp - fadeStartTime;
+  if (!fadeStartTime) fadeStartTime = timestamp;
+  let elapsed = timestamp - fadeStartTime;
   fade = elapsed / fadeDuration;
   if (fade >= 1) {
     fade = 1;
@@ -187,9 +282,6 @@ function updateFade(timestamp) {
   }
 }
 
-/**************************************************
- * 11) Arrière-plan
- **************************************************/
 function updateBackground() {
   bg1X -= backgroundSpeed;
   bg2X -= backgroundSpeed;
@@ -209,9 +301,6 @@ function drawBackgroundCrossFade() {
   ctx.restore();
 }
 
-/**************************************************
- * 12) Sol
- **************************************************/
 function updateGround() {
   ground1X1 -= groundSpeed;
   ground1X2 -= groundSpeed;
@@ -237,7 +326,7 @@ function drawGroundCrossFade() {
 }
 
 /**************************************************
- * 13) Joueur
+ * 16) Joueur
  **************************************************/
 function updatePlayer(timestamp) {
   // Animation
@@ -246,14 +335,37 @@ function updatePlayer(timestamp) {
     currentFrame = (currentFrame + 1) % playerImages.length;
   }
 
+  // Gravité
   player.y += player.vy;
   player.vy += gravity;
 
-  // Ne pas tomber sous le sol
+  // Collision avec le sol
   if (player.y + player.height >= HEIGHT) {
     player.y = HEIGHT - player.height;
     player.vy = 0;
     player.jumping = false;
+    jumpCount = 0;
+  }
+
+  // Plateforme
+  if (player.vy >= 0) {
+    platforms.forEach(p => {
+      if (
+        player.x + player.width > p.x &&
+        player.x < p.x + p.width
+      ) {
+        if (
+          player.y + player.height >= p.y &&
+          player.y + player.height <= p.y + p.height
+        ) {
+          // Atterrissage
+          player.y = p.y - player.height;
+          player.vy = 0;
+          player.jumping = false;
+          jumpCount = 0;
+        }
+      }
+    });
   }
 }
 
@@ -268,36 +380,83 @@ function drawPlayer() {
 }
 
 /**************************************************
- * 14) Saut - clavier
+ * 17) Double-Saut
  **************************************************/
-function handleJump(e) {
-  if ((e.code === "Space" || e.code === "ArrowUp") && !player.jumping) {
-    player.vy = -jumpStrength;
-    player.jumping = true;
+function handleJumpKey(e) {
+  if (e.code === "Space" || e.code === "ArrowUp") {
+    if (jumpCount < 2) {
+      if (jumpCount === 0) {
+        // Premier saut
+        player.vy = -jumpStrength;
+      } else {
+        // Deuxième saut moins fort
+        player.vy = -jumpStrength2;
+      }
+      jumpCount++;
+      player.jumping = true;
+    }
   }
 }
 
-/**************************************************
- * 14bis) Saut - tactile
- **************************************************/
 function handleTouchJump(e) {
-  // Empêche l'éventuel défilement ou zoom
   e.preventDefault();
-
-  if (!player.jumping) {
-    player.vy = -jumpStrength;
+  if (jumpCount < 2) {
+    if (jumpCount === 0) {
+      player.vy = -jumpStrength;
+    } else {
+      player.vy = -jumpStrength2;
+    }
+    jumpCount++;
     player.jumping = true;
   }
 }
 
 /**************************************************
- * 15) Obstacles
+ * 18) Plateformes
+ **************************************************/
+function spawnPlatform() {
+  let spawnY = 150 + Math.random() * 100; 
+  platforms.push({
+    x: WIDTH,
+    y: spawnY,
+    width: PLATFORM_WIDTH,
+    height: PLATFORM_HEIGHT
+  });
+}
+
+function managePlatforms(timestamp) {
+  if (timestamp - lastPlatformTime > platformInterval) {
+    spawnPlatform();
+    lastPlatformTime = timestamp;
+    // interval aléatoire 3–6s
+    platformInterval = 3000 + Math.random() * 3000;
+  }
+}
+
+function updatePlatforms() {
+  for (let i = 0; i < platforms.length; i++) {
+    platforms[i].x -= gameSpeed;
+  }
+  for (let i = platforms.length - 1; i >= 0; i--) {
+    if (platforms[i].x + platforms[i].width < 0) {
+      platforms.splice(i, 1);
+    }
+  }
+}
+
+function drawPlatforms() {
+  platforms.forEach(p => {
+    ctx.drawImage(platformImage, p.x, p.y, p.width, p.height);
+  });
+}
+
+/**************************************************
+ * 19) Obstacles
  **************************************************/
 function manageObstacles(timestamp) {
   if (timestamp - lastObstacleTime > obstacleInterval) {
-    const randIndex = Math.floor(Math.random() * loadedObstacleImages.length);
-    const obsData = loadedObstacleImages[randIndex];
-
+    let randIndex = Math.floor(Math.random() * loadedObstacleImages.length);
+    let obsData = loadedObstacleImages[randIndex];
     obstacles.push({
       x: WIDTH,
       y: HEIGHT - obsData.height,
@@ -305,7 +464,9 @@ function manageObstacles(timestamp) {
       height: obsData.height,
       image: obsData.image
     });
+
     lastObstacleTime = timestamp;
+    obstacleInterval = obstacleIntervalBase / 2 + Math.random() * obstacleIntervalBase;
   }
 }
 
@@ -328,24 +489,89 @@ function drawObstacles() {
 }
 
 /**************************************************
- * 16) Collisions
+ * 20) Collisions (obstacles) => Perte de vie
  **************************************************/
 function checkCollisions() {
   for (let obs of obstacles) {
-    if (
-      player.x < obs.x + obs.width &&
-      player.x + player.width > obs.x &&
-      player.y < obs.y + obs.height &&
-      player.y + player.height > obs.y
-    ) {
-      gameOver = true;
-      break;
+    if (isColliding(player, obs)) {
+      // On perd 1 vie
+      lives--;
+      obstacles.splice(obstacles.indexOf(obs), 1);
+
+      if (lives <= 0) {
+        gameOver = true;
+      }
+      return; 
     }
   }
 }
 
 /**************************************************
- * 17) Score et fin de jeu
+ * 21) Fromages
+ **************************************************/
+// On peut décider d'apparitions aléatoires
+function manageCheeses(timestamp) {
+  if (timestamp - lastCheeseTime > cheeseInterval) {
+    spawnCheese();
+    lastCheeseTime = timestamp;
+    // interval aléatoire 2–5s
+    cheeseInterval = 2000 + Math.random() * 3000;
+  }
+}
+
+// Crée un fromage sur le sol ou un peu plus haut
+function spawnCheese() {
+  // On peut décider de le mettre à x=WIDTH + random offset
+  // y= (par ex) entre groundY - 100 et groundY - 32
+  const spawnY = groundY - 32 - Math.random() * 100; 
+  cheeses.push({
+    x: WIDTH,
+    y: spawnY,
+    width: CHEESE_WIDTH,
+    height: CHEESE_HEIGHT
+  });
+}
+
+function updateCheeses() {
+  cheeses.forEach(ch => {
+    ch.x -= gameSpeed;
+  });
+  for (let i = cheeses.length - 1; i >= 0; i--) {
+    if (cheeses[i].x + cheeses[i].width < 0) {
+      cheeses.splice(i, 1);
+    }
+  }
+}
+
+function drawCheeses() {
+  cheeses.forEach(ch => {
+    ctx.drawImage(cheeseImage, ch.x, ch.y, ch.width, ch.height);
+  });
+}
+
+/**************************************************
+ * 22) Collision avec Fromage
+ **************************************************/
+function checkCheeseCollisions() {
+  for (let i = cheeses.length - 1; i >= 0; i--) {
+    let ch = cheeses[i];
+    if (isColliding(player, ch)) {
+      // Ramasse le fromage
+      cheeseCount++;
+      cheeses.splice(i, 1);
+
+      // À 20 fromages, on gagne 1 vie
+      if (cheeseCount % CHEESES_FOR_EXTRA_LIFE === 0) {
+        lives++;
+        // Optionnel : on peut fixer un max de vies (ex. 5)
+        // if (lives > 5) lives = 5;
+      }
+    }
+  }
+}
+
+/**************************************************
+ * 23) Affichage Score, Vies et Fromages
  **************************************************/
 function afficherScore() {
   ctx.fillStyle = "black";
@@ -353,6 +579,25 @@ function afficherScore() {
   ctx.fillText("Score : " + score, 20, 30);
 }
 
+// On affiche 3 coeurs (ou plus si on dépasse)
+function afficherVies() {
+  const heartSize = 30;
+  const margin = 10;
+  for (let i = 0; i < lives; i++) {
+    ctx.drawImage(lifeImage, 20 + i*(heartSize+margin), 60, heartSize, heartSize);
+  }
+}
+
+// Affiche le nb de fromages
+function afficherCheeseCount() {
+  ctx.fillStyle = "black";
+  ctx.font = "20px Arial";
+  ctx.fillText("Fromages : " + cheeseCount, 20, 110);
+}
+
+/**************************************************
+ * 24) Fin de jeu
+ **************************************************/
 function afficherGameOver() {
   ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
   ctx.fillRect(0, 0, WIDTH, HEIGHT);
@@ -366,6 +611,27 @@ function afficherGameOver() {
 }
 
 /**************************************************
- * 18) Lancement du jeu
+ * 25) Difficulté
+ **************************************************/
+function handleDifficulty(timestamp) {
+  if (timestamp - lastDifficultyIncrease > difficultyInterval) {
+    // augmenter la vitesse
+    gameSpeed += 1;
+
+    // obstacles plus fréquents
+    obstacleIntervalBase = Math.max(500, obstacleIntervalBase - 200);
+
+    // plateformes plus fréquentes
+    platformIntervalBase = Math.max(2000, platformIntervalBase - 500);
+
+    // fromages plus fréquents ?
+    cheeseIntervalBase = Math.max(1000, cheeseIntervalBase - 200);
+
+    lastDifficultyIncrease = timestamp;
+  }
+}
+
+/**************************************************
+ * 26) Lancement
  **************************************************/
 init();
