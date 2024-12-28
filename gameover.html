@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Game Over - Mon Jeu de Plateforme</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" href="data:,">
+</head>
+<body>
+    <div id="gameOverContainer">
+        <h1>GAME OVER</h1>
+        <p id="finalScore">Score final : 0</p>
+        <button id="restartButton">Revenir au Menu</button>
+    </div>
+    
+    <!-- Script pour gérer l'affichage du score et le bouton de redirection -->
+    <script>
+        // Récupérer le score depuis l'URL
+        const params = new URLSearchParams(window.location.search);
+        const score = params.get('score') || 0;
+
+        // Afficher le score
+        document.getElementById('finalScore').textContent = `Score final : ${score}`;
+
+        // Fonction pour revenir au menu
+        function goToMenu() {
+            window.location.href = 'index.html';
+        }
+
+        // Ajouter un écouteur d'événement pour le bouton de redirection
+        const restartButton = document.getElementById('restartButton');
+        restartButton.addEventListener('click', goToMenu);
+    </script>
+</body>
+</html>

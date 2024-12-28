@@ -1,65 +1,167 @@
-/* Empêche marges & scroll */
-html, body {
+/* styles.css */
+
+/* Styles généraux pour le corps et le HTML */
+body, html {
+  height: 100%;
   margin: 0;
   padding: 0;
-  width: 100%;
-  height: 100%;
-  background: #eee;
-  overflow: hidden;
+  font-family: 'Arial', sans-serif;
+  background-color: #f0f0f0; /* Couleur de fond neutre */
+  overflow: hidden; /* Empêche le défilement */
+  position: relative;
 }
 
-/* Affiche un message si on est en portrait sur mobile */
-@media screen and (orientation: portrait) {
-  /* On masque le canvas et on affiche le rotateMessage */
-  #gameCanvas {
-      display: none;
-  }
+/* Styles pour le message de rotation */
+#rotateMessage {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 24px;
+  color: #333;
+  text-align: center;
+  display: none; /* Masqué par défaut */
+  background-color: rgba(255, 255, 255, 0.8);
+  padding: 20px;
+  border-radius: 10px;
+  z-index: 1000;
+}
+
+/* Afficher le message de rotation en mode portrait */
+@media only screen and (orientation: portrait) {
   #rotateMessage {
-      display: flex;
-  }
-}
-
-@media screen and (orientation: landscape) {
-  #gameCanvas {
       display: block;
   }
-  #rotateMessage {
-      display: none;
-  }
 }
 
-/* Centre le canvas si visible */
-body {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  flex-direction: column; /* Pour que le bouton soit en-dessous */
-}
-
-#gameCanvas {
-  border: 2px solid #000;
-}
-
-/* Le message de rotation, centré en plein écran */
-#rotateMessage {
-  display: none; /* On l'affiche seulement en portrait */
+/* Style des boutons */
+button {
   position: absolute;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  background: rgba(0,0,0,0.8);
-  color: #fff;
-  justify-content: center;
-  align-items: center;
-  text-align: center;
+  padding: 15px 30px;
   font-size: 24px;
-  padding: 20px;
+  background-color: #28a745; /* Vert attrayant */
+  color: #fff; /* Texte blanc */
+  border: none; /* Sans bordure */
+  border-radius: 8px; /* Coins arrondis */
+  cursor: pointer; /* Curseur pointeur */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3); /* Ombre portée */
+  transition: background-color 0.3s, transform 0.3s, box-shadow 0.3s; /* Transitions douces */
+  z-index: 1000; /* Au-dessus des autres éléments */
 }
 
-/* Bouton Rejouer masqué par défaut */
+/* Positionnement du bouton de démarrage au centre */
+#startButton {
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: block; /* Visible sur la page de lancement */
+  opacity: 1;
+}
+
+/* Bouton de démarrage caché par défaut (affiché via JS) */
+#startButton.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Bouton Rejouer */
 #restartButton {
-  display: none; 
-  margin-top: 10px;
-  padding: 10px 20px;
-  font-size: 16px;
-  cursor: pointer;
+  top: 60%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: none; /* Visible uniquement en game over */
+  background-color: #dc3545; /* Rouge pour attirer l'attention */
+}
+
+/* Bouton Revenir au Menu dans la page de fin */
+#gameOverContainer #restartButton {
+  top: 70%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 15px 30px;
+  font-size: 24px;
+  background-color: #007bff; /* Bleu pour le menu */
+}
+
+/* Styles pour le conteneur de fin de jeu */
+#gameOverContainer {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  display: none; /* Affiché via JS */
+  background-color: rgba(255, 255, 255, 0.9);
+  padding: 40px;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+#gameOverContainer.visible {
+  display: block;
+}
+
+#gameOverContainer h1 {
+  font-size: 48px;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+#gameOverContainer p {
+  font-size: 24px;
+  margin-bottom: 30px;
+  color: #555;
+}
+
+/* Bouton Revenir au Menu */
+#gameOverContainer #restartButton {
+  background-color: #007bff; /* Bleu pour le menu */
+}
+
+#gameOverContainer #restartButton:hover {
+  background-color: #0069d9;
+}
+
+#gameOverContainer #restartButton:active {
+  background-color: #005cbf;
+}
+
+#gameOverContainer #restartButton:focus {
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.5);
+}
+
+/* Effets au survol (hover) pour tous les boutons */
+button:hover {
+  background-color: #218838; /* Vert plus foncé */
+  transform: translate(-50%, -50%) scale(1.05); /* Légère augmentation de taille */
+  box-shadow: 0 6px 8px rgba(0, 0, 0, 0.4); /* Ombre plus prononcée */
+}
+
+/* Effet au clic (active) pour tous les boutons */
+button:active {
+  background-color: #1e7e34; /* Vert encore plus foncé */
+  transform: translate(-50%, -50%) scale(0.95); /* Légère réduction de taille */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); /* Ombre réduite */
+}
+
+/* Effet de focus pour l'accessibilité */
+button:focus {
+  outline: none; /* Supprimer la bordure de focus par défaut */
+  box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.5); /* Ombre verte autour du bouton */
+}
+
+/* Responsive Design pour les petits écrans */
+@media (max-width: 600px) {
+  button {
+      font-size: 18px;
+      padding: 12px 24px;
+  }
+
+  #gameOverContainer h1 {
+      font-size: 36px;
+  }
+
+  #gameOverContainer p {
+      font-size: 20px;
+  }
 }
