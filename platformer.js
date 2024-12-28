@@ -385,7 +385,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         updateBackground();
-        drawBackground();
+        drawBackgroundCrossFade();
 
         updateGround();
         drawGroundCrossFade();
