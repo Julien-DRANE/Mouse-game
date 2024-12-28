@@ -1,11 +1,31 @@
 /**************************************************
- * 1) Configuration du Canvas
+ * 1) Configuration du Canvas et Responsivité
  **************************************************/
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
-const WIDTH = canvas.width;
-const HEIGHT = canvas.height;
+// Fonction pour redimensionner le canvas en fonction de la fenêtre
+function resizeCanvas() {
+  // Définir un ratio pour maintenir l'aspect du jeu (ex. 800x400)
+  const gameWidth = 800;
+  const gameHeight = 400;
+  const windowWidth = window.innerWidth;
+  const windowHeight = window.innerHeight;
+  const scale = Math.min(windowWidth / gameWidth, windowHeight / gameHeight);
+
+  canvas.width = gameWidth * scale;
+  canvas.height = gameHeight * scale;
+
+  // Mettre à jour les variables de jeu basées sur le scale
+  // Ceci assure que les éléments du jeu s'adaptent à la nouvelle taille
+  scaleFactor = scale;
+}
+
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+// Variables globales pour l'échelle
+let scaleFactor = 1;
 
 /**************************************************
  * 2) Images du Décor (Cross-Fade ou non)
@@ -16,7 +36,7 @@ background1.src = "images/background1.png";
 const background2 = new Image();
 background2.src = "images/background2.png";
 
-let bg1X = 0, bg2X = WIDTH;
+let bg1X = 0, bg2X = 800; // Utiliser la largeur du jeu fixe
 let backgroundSpeed = 2; // Décor lointain
 
 // Cross-fade décor
@@ -34,8 +54,8 @@ ground1.src = "images/surface1.png";
 const ground2 = new Image();
 ground2.src = "images/surface2.png";
 
-let ground1X1 = 0, ground1X2 = WIDTH;
-let ground2X1 = 0, ground2X2 = WIDTH;
+let ground1X1 = 0, ground1X2 = 800;
+let ground2X1 = 0, ground2X2 = 800;
 let groundSpeed = backgroundSpeed * 3;
 
 const groundY = 350;
@@ -53,7 +73,7 @@ const obstacles = [];
 let obstacleIntervalBase = 2000; 
 let obstacleInterval = obstacleIntervalBase;
 let lastObstacleTime = 0;
-let gameSpeed = 5; // vitesse horizontale de défilement
+let gameSpeed = 5; // Vitesse horizontale de défilement
 
 /**************************************************
  * 5) Plateformes
@@ -161,7 +181,7 @@ const cheeseImage = new Image();
 cheeseImage.src = "images/fromage.png";
 
 const cheeses = [];
-let cheeseCount = 0; // nombre de fromages ramassés
+let cheeseCount = 0; // Nombre de fromages ramassés
 
 // Apparition (spawn) aléatoire
 let lastCheeseTime = 0;
@@ -184,7 +204,7 @@ let jumpSound = new Audio("sounds/jump.mp3");
 
 // Config audio
 music.loop = true;
-music.volume = 0.2;    // musique plus faible
+music.volume = 0.2;    // Musique plus faible
 outchSound.volume = 1.0;
 jumpSound.volume = 1.0;
 
@@ -195,14 +215,19 @@ jumpSound.load();
 
 // Démarrer la musique après interaction utilisateur
 function enableAudio() {
-  music.play().catch(err => {
+  console.log("Interaction utilisateur détectée, démarrage de la musique...");
+  music.play().then(() => {
+    console.log("Musique jouée avec succès");
+  }).catch(err => {
     console.log("Impossible de jouer la musique :", err);
   });
-  // On retire ces écouteurs pour éviter de rejouer la musique sans cesse
+
+  // Retirer les écouteurs après le démarrage de la musique
   document.removeEventListener("keydown", enableAudio);
   document.removeEventListener("mousedown", enableAudio);
   document.removeEventListener("touchstart", enableAudio);
 }
+
 document.addEventListener("keydown", enableAudio);
 document.addEventListener("mousedown", enableAudio);
 document.addEventListener("touchstart", enableAudio, { passive: false });
@@ -211,6 +236,8 @@ document.addEventListener("touchstart", enableAudio, { passive: false });
  * 14) Initialisation du jeu
  **************************************************/
 function init() {
+  console.log("Initialisation du jeu...");
+
   // Saut via clavier
   document.addEventListener('keydown', handleJumpKey);
 
@@ -247,8 +274,9 @@ function init() {
 
   function onImgLoad() {
     loadedCount++;
+    console.log(`Image chargée: ${loadedCount}/${totalImages}`);
     if (loadedCount === totalImages) {
-      // Tout est chargé, on démarre la boucle
+      console.log("Toutes les images sont chargées. Démarrage de la boucle de jeu.");
       requestAnimationFrame(gameLoop);
     }
   }
@@ -263,7 +291,7 @@ function gameLoop(timestamp) {
     return;
   }
 
-  ctx.clearRect(0, 0, WIDTH, HEIGHT);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   // Cross-Fade du décor
   if (transitionActive) {
@@ -293,8 +321,8 @@ function gameLoop(timestamp) {
   drawCheeses();
 
   // Collisions
-  checkCollisions();        // obstacles
-  checkCheeseCollisions();  // fromages
+  checkCollisions();        // Obstacles
+  checkCheeseCollisions();  // Fromages
 
   afficherScore();
   afficherVies();
@@ -321,43 +349,47 @@ function updateFade(timestamp) {
 function updateBackground() {
   bg1X -= backgroundSpeed;
   bg2X -= backgroundSpeed;
-  if (bg1X <= -WIDTH) bg1X = WIDTH;
-  if (bg2X <= -WIDTH) bg2X = WIDTH;
+  if (bg1X <= -800) bg1X = 800;
+  if (bg2X <= -800) bg2X = 800;
 }
 
 function drawBackgroundCrossFade() {
   ctx.save();
+  ctx.scale(scaleFactor, scaleFactor); // Appliquer l'échelle
+
   ctx.globalAlpha = 1 - fade;
-  ctx.drawImage(background1, bg1X, 0, WIDTH, HEIGHT);
-  ctx.drawImage(background1, bg2X, 0, WIDTH, HEIGHT);
+  ctx.drawImage(background1, bg1X, 0, 800, 400);
+  ctx.drawImage(background1, bg2X, 0, 800, 400);
 
   ctx.globalAlpha = fade;
-  ctx.drawImage(background2, bg1X, 0, WIDTH, HEIGHT);
-  ctx.drawImage(background2, bg2X, 0, WIDTH, HEIGHT);
+  ctx.drawImage(background2, bg1X, 0, 800, 400);
+  ctx.drawImage(background2, bg2X, 0, 800, 400);
   ctx.restore();
 }
 
 function updateGround() {
   ground1X1 -= groundSpeed;
   ground1X2 -= groundSpeed;
-  if (ground1X1 <= -WIDTH) ground1X1 = ground1X2 + WIDTH;
-  if (ground1X2 <= -WIDTH) ground1X2 = ground1X1 + WIDTH;
+  if (ground1X1 <= -800) ground1X1 = ground1X2 + 800;
+  if (ground1X2 <= -800) ground1X2 = ground1X1 + 800;
 
   ground2X1 -= groundSpeed;
   ground2X2 -= groundSpeed;
-  if (ground2X1 <= -WIDTH) ground2X1 = ground2X2 + WIDTH;
-  if (ground2X2 <= -WIDTH) ground2X2 = ground2X1 + WIDTH;
+  if (ground2X1 <= -800) ground2X1 = ground2X2 + 800;
+  if (ground2X2 <= -800) ground2X2 = ground2X1 + 800;
 }
 
 function drawGroundCrossFade() {
   ctx.save();
+  ctx.scale(scaleFactor, scaleFactor); // Appliquer l'échelle
+
   ctx.globalAlpha = 1 - fade;
-  ctx.drawImage(ground1, ground1X1, groundY, WIDTH, groundHeight);
-  ctx.drawImage(ground1, ground1X2, groundY, WIDTH, groundHeight);
+  ctx.drawImage(ground1, ground1X1, groundY, 800, groundHeight);
+  ctx.drawImage(ground1, ground1X2, groundY, 800, groundHeight);
 
   ctx.globalAlpha = fade;
-  ctx.drawImage(ground2, ground2X1, groundY, WIDTH, groundHeight);
-  ctx.drawImage(ground2, ground2X2, groundY, WIDTH, groundHeight);
+  ctx.drawImage(ground2, ground2X1, groundY, 800, groundHeight);
+  ctx.drawImage(ground2, ground2X2, groundY, 800, groundHeight);
   ctx.restore();
 }
 
@@ -376,8 +408,8 @@ function updatePlayer(timestamp) {
   player.vy += gravity;
 
   // Collision avec le sol
-  if (player.y + player.height >= HEIGHT) {
-    player.y = HEIGHT - player.height;
+  if (player.y + player.height >= groundY) {
+    player.y = groundY - player.height;
     player.vy = 0;
     player.jumping = false;
     jumpCount = 0;
@@ -406,6 +438,8 @@ function updatePlayer(timestamp) {
 }
 
 function drawPlayer() {
+  ctx.save();
+  ctx.scale(scaleFactor, scaleFactor); // Appliquer l'échelle
   ctx.drawImage(
     playerImages[currentFrame],
     player.x,
@@ -413,6 +447,7 @@ function drawPlayer() {
     player.width,
     player.height
   );
+  ctx.restore();
 }
 
 /**************************************************
@@ -432,6 +467,7 @@ function handleJumpKey(e) {
       }
       jumpCount++;
       player.jumping = true;
+      console.log("Saut détecté via clavier");
     }
   }
 }
@@ -450,6 +486,7 @@ function handleTouchJump(e) {
     }
     jumpCount++;
     player.jumping = true;
+    console.log("Saut détecté via tactile");
   }
 }
 
@@ -459,7 +496,7 @@ function handleTouchJump(e) {
 function spawnPlatform() {
   let spawnY = 150 + Math.random() * 100; 
   platforms.push({
-    x: WIDTH,
+    x: 800,
     y: spawnY,
     width: PLATFORM_WIDTH,
     height: PLATFORM_HEIGHT
@@ -470,8 +507,9 @@ function managePlatforms(timestamp) {
   if (timestamp - lastPlatformTime > platformInterval) {
     spawnPlatform();
     lastPlatformTime = timestamp;
-    // interval aléatoire entre 3s et 6s
+    // Interval aléatoire entre 3s et 6s
     platformInterval = 3000 + Math.random() * 3000;
+    console.log(`Plateforme créée à Y=${platforms[platforms.length -1].y}`);
   }
 }
 
@@ -482,14 +520,18 @@ function updatePlatforms() {
   for (let i = platforms.length - 1; i >= 0; i--) {
     if (platforms[i].x + platforms[i].width < 0) {
       platforms.splice(i, 1);
+      console.log("Plateforme supprimée");
     }
   }
 }
 
 function drawPlatforms() {
+  ctx.save();
+  ctx.scale(scaleFactor, scaleFactor); // Appliquer l'échelle
   platforms.forEach(p => {
     ctx.drawImage(platformImage, p.x, p.y, p.width, p.height);
   });
+  ctx.restore();
 }
 
 /**************************************************
@@ -500,8 +542,8 @@ function manageObstacles(timestamp) {
     let randIndex = Math.floor(Math.random() * loadedObstacleImages.length);
     let obsData = loadedObstacleImages[randIndex];
     obstacles.push({
-      x: WIDTH,
-      y: HEIGHT - obsData.height,
+      x: 800,
+      y: groundY - obsData.height,
       width: obsData.width,
       height: obsData.height,
       image: obsData.image
@@ -509,6 +551,7 @@ function manageObstacles(timestamp) {
 
     lastObstacleTime = timestamp;
     obstacleInterval = obstacleIntervalBase / 2 + Math.random() * obstacleIntervalBase;
+    console.log("Obstacle créé");
   }
 }
 
@@ -520,14 +563,18 @@ function updateObstacles() {
     if (obstacles[i].x + obstacles[i].width < 0) {
       obstacles.splice(i, 1);
       score++;
+      console.log(`Obstacle passé. Score: ${score}`);
     }
   }
 }
 
 function drawObstacles() {
+  ctx.save();
+  ctx.scale(scaleFactor, scaleFactor); // Appliquer l'échelle
   obstacles.forEach(obs => {
     ctx.drawImage(obs.image, obs.x, obs.y, obs.width, obs.height);
   });
+  ctx.restore();
 }
 
 /**************************************************
@@ -539,6 +586,7 @@ function checkCollisions() {
       // Son de collision
       outchSound.currentTime = 0;
       outchSound.play();
+      console.log("Collision avec un obstacle");
 
       // On perd 1 vie
       lives--;
@@ -547,6 +595,7 @@ function checkCollisions() {
       if (lives <= 0) {
         gameOver = true;
         afficherRestartButton();
+        console.log("Game Over");
       }
       return; 
     }
@@ -560,20 +609,22 @@ function manageCheeses(timestamp) {
   if (timestamp - lastCheeseTime > cheeseInterval) {
     spawnCheese();
     lastCheeseTime = timestamp;
-    // interval 2–5s
+    // Interval 2–5s
     cheeseInterval = 2000 + Math.random() * 3000;
+    console.log("Fromage créé");
   }
 }
 
 function spawnCheese() {
-  // position sur le sol ou un peu plus haut
+  // Position sur le sol ou un peu plus haut
   const spawnY = groundY - CHEESE_HEIGHT - Math.random() * 100;
   cheeses.push({
-    x: WIDTH,
+    x: 800,
     y: spawnY,
     width: CHEESE_WIDTH,
     height: CHEESE_HEIGHT
   });
+  console.log(`Fromage créé à Y=${spawnY}`);
 }
 
 function updateCheeses() {
@@ -583,14 +634,18 @@ function updateCheeses() {
   for (let i = cheeses.length - 1; i >= 0; i--) {
     if (cheeses[i].x + cheeses[i].width < 0) {
       cheeses.splice(i, 1);
+      console.log("Fromage supprimé");
     }
   }
 }
 
 function drawCheeses() {
+  ctx.save();
+  ctx.scale(scaleFactor, scaleFactor); // Appliquer l'échelle
   cheeses.forEach(ch => {
     ctx.drawImage(cheeseImage, ch.x, ch.y, ch.width, ch.height);
   });
+  ctx.restore();
 }
 
 /**************************************************
@@ -603,10 +658,12 @@ function checkCheeseCollisions() {
       // Ramasse le fromage
       cheeseCount++;
       cheeses.splice(i, 1);
+      console.log(`Fromage ramassé. Total: ${cheeseCount}`);
 
       // Tous les 20 fromages => +1 vie
       if (cheeseCount % CHEESES_FOR_EXTRA_LIFE === 0) {
         lives++;
+        console.log(`Vie supplémentaire! Total vies: ${lives}`);
       }
     }
   }
@@ -616,40 +673,50 @@ function checkCheeseCollisions() {
  * 24) Affichage : score, vies, fromages
  **************************************************/
 function afficherScore() {
+  ctx.save();
+  ctx.scale(scaleFactor, scaleFactor); // Appliquer l'échelle
   ctx.fillStyle = "black";
   ctx.font = "20px Arial";
   ctx.fillText("Score : " + score, 20, 30);
+  ctx.restore();
 }
 
 function afficherVies() {
+  ctx.save();
+  ctx.scale(scaleFactor, scaleFactor); // Appliquer l'échelle
   const heartSize = 30;
   const margin = 10;
   for (let i = 0; i < lives; i++) {
     ctx.drawImage(lifeImage, 20 + i*(heartSize + margin), 60, heartSize, heartSize);
   }
+  ctx.restore();
 }
 
 function afficherCheeseCount() {
+  ctx.save();
+  ctx.scale(scaleFactor, scaleFactor); // Appliquer l'échelle
   ctx.fillStyle = "black";
   ctx.font = "20px Arial";
   ctx.fillText("Fromages : " + cheeseCount, 20, 110);
+  ctx.restore();
 }
 
 /**************************************************
  * 25) Fin de jeu
  **************************************************/
 function afficherGameOver() {
+  ctx.save();
+  ctx.scale(scaleFactor, scaleFactor); // Appliquer l'échelle
   ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
-  ctx.fillRect(0, 0, WIDTH, HEIGHT);
+  ctx.fillRect(0, 0, 800, 400);
 
   ctx.fillStyle = "#fff";
   ctx.font = "40px Arial";
-  ctx.fillText("GAME OVER", WIDTH / 2 - 100, HEIGHT / 2);
+  ctx.fillText("GAME OVER", 300, 200);
 
   ctx.font = "20px Arial";
-  ctx.fillText("Score final : " + score, WIDTH / 2 - 60, HEIGHT / 2 + 40);
-
-  afficherRestartButton();
+  ctx.fillText("Score final : " + score, 310, 240);
+  ctx.restore();
 }
 
 /**************************************************
@@ -660,8 +727,12 @@ function afficherRestartButton() {
   restartButton.style.display = 'block';
 }
 
-// Ajout d'un écouteur pour le bouton Rejouer
+/**************************************************
+ * 27) Gestion du Bouton Rejouer
+ **************************************************/
 document.getElementById('restartButton').addEventListener('click', () => {
+  console.log("Bouton Rejouer cliqué. Réinitialisation du jeu.");
+
   // Réinitialiser les variables du jeu
   score = 0;
   lives = 3;
@@ -680,6 +751,7 @@ document.getElementById('restartButton').addEventListener('click', () => {
   gameOver = false;
 
   // Masquer le bouton Rejouer
+  const restartButton = document.getElementById('restartButton');
   restartButton.style.display = 'none';
 
   // Redémarrer la boucle de jeu
@@ -687,27 +759,31 @@ document.getElementById('restartButton').addEventListener('click', () => {
 });
 
 /**************************************************
- * 27) Difficulté
+ * 28) Gestion de la Difficulté
  **************************************************/
 function handleDifficulty(timestamp) {
   if (timestamp - lastDifficultyIncrease > difficultyInterval) {
-    // augmenter la vitesse
+    // Augmenter la vitesse
     gameSpeed += 1;
+    console.log(`Vitesse du jeu augmentée. Nouvelle vitesse: ${gameSpeed}`);
 
-    // obstacles plus fréquents
+    // Obstacles plus fréquents
     obstacleIntervalBase = Math.max(500, obstacleIntervalBase - 200);
+    console.log(`Intervalle des obstacles ajusté à: ${obstacleIntervalBase}ms`);
 
-    // plateformes plus fréquentes
+    // Plateformes plus fréquentes
     platformIntervalBase = Math.max(2000, platformIntervalBase - 500);
+    console.log(`Intervalle des plateformes ajusté à: ${platformIntervalBase}ms`);
 
-    // fromages plus fréquents
+    // Fromages plus fréquents
     cheeseIntervalBase = Math.max(1000, cheeseIntervalBase - 200);
+    console.log(`Intervalle des fromages ajusté à: ${cheeseIntervalBase}ms`);
 
     lastDifficultyIncrease = timestamp;
   }
 }
 
 /**************************************************
- * 28) Lancement
+ * 29) Lancement
  **************************************************/
 init();
