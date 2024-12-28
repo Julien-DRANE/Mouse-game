@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
      **************************************************/
     const player = {
         x: 50,
-        y: HEIGHT - 100, // Utilise la variable HEIGHT correctement définie
+        y: HEIGHT - 100,
         width: 50,
         height: 50,
         vy: 0,
@@ -171,14 +171,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let outchSound = new Audio("sounds/outch.mp3");
     let jumpSound = new Audio("sounds/jump.mp3");
+    let miamSound = new Audio("sounds/miam.mp3"); // **Ajouté**
 
     // Config audio
     outchSound.volume = 1.0;
     jumpSound.volume = 1.0;
+    miamSound.volume = 1.0; // **Ajouté**
 
     // Charger les sons
     outchSound.load();
     jumpSound.load();
+    miamSound.load(); // **Ajouté**
+
+    // Gestion des erreurs de chargement pour miam.mp3 (Optionnel)
+    miamSound.onerror = (e) => {
+        console.error("Erreur de chargement de miam.mp3 :", e);
+        // Vous pouvez également définir un comportement alternatif, comme désactiver l'effet sonore
+    };
 
     /**************************************************
      * 13) Collision “frôlable” (30%)
@@ -280,17 +289,41 @@ document.addEventListener('DOMContentLoaded', () => {
         let loadedCount = 0;
 
         background1.onload = onImgLoad;
+        background1.onerror = () => {
+            console.error("Erreur de chargement de background1.png");
+        };
         background2.onload = onImgLoad;
+        background2.onerror = () => {
+            console.error("Erreur de chargement de background2.png");
+        };
         ground1.onload = onImgLoad;
+        ground1.onerror = () => {
+            console.error("Erreur de chargement de ground1.png");
+        };
         ground2.onload = onImgLoad;
+        ground2.onerror = () => {
+            console.error("Erreur de chargement de ground2.png");
+        };
         platformImage.onload = onImgLoad;
+        platformImage.onerror = () => {
+            console.error("Erreur de chargement de plateforme1.png");
+        };
         lifeImage.onload = onImgLoad;
+        lifeImage.onerror = () => {
+            console.error("Erreur de chargement de life.png");
+        };
         cheeseImage.onload = onImgLoad;
+        cheeseImage.onerror = () => {
+            console.error("Erreur de chargement de fromage.png");
+        };
 
         playerImages.forEach((img, index) => {
             img.onload = () => {
                 console.log(`Image joueur ${index + 1} chargée`);
                 onImgLoad();
+            };
+            img.onerror = () => {
+                console.error(`Erreur de chargement de player${index + 1}.png`);
             };
         });
 
@@ -305,6 +338,9 @@ document.addEventListener('DOMContentLoaded', () => {
             img.onload = () => {
                 console.log(`Obstacle ${i + 1} chargé`);
                 onImgLoad();
+            };
+            img.onerror = () => {
+                console.error(`Erreur de chargement de obstacle${i + 1}.png`);
             };
         });
 
@@ -328,9 +364,15 @@ document.addEventListener('DOMContentLoaded', () => {
     /**************************************************
      * 17) Boucle de jeu
      **************************************************/
+    let startTime = null; // Variable pour enregistrer le temps de début
+    let lastKnifeSpawnTimeSet = false; // Variable pour savoir si lastKnifeSpawnTime est initialisé
+    let lastKnifeSpawnTime = 0;
+    const knifeSpawnIntervalBase = 5000; // ms (5 secondes)
+
     function gameLoop(timestamp) {
+        if (!startTime) startTime = timestamp; // Initialisation du temps de début
+
         if (gameOver) {
-            // Rediriger vers la page de fin de jeu avec le score
             window.location.href = `gameover.html?score=${score}`;
             return;
         }
@@ -732,6 +774,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 cheeses.splice(i, 1);
                 console.log(`Fromage ramassé. Total : ${cheeseCount}`);
 
+                // Jouer le son "miam" lors du ramassage
+                miamSound.currentTime = 0; // Remettre le son au début
+                miamSound.play().then(() => {
+                    console.log("Son 'miam' joué.");
+                }).catch(err => {
+                    console.error("Erreur lors de la lecture du son 'miam' :", err);
+                });
+
                 // Tous les 10 fromages => +1 vie
                 if (cheeseCount % CHEESES_FOR_EXTRA_LIFE === 0) {
                     lives++;
@@ -799,38 +849,46 @@ document.addEventListener('DOMContentLoaded', () => {
      **************************************************/
     // Si vous choisissez de conserver le bouton de redémarrage, assurez-vous que la redirection automatique n'interfère pas avec lui.
 
-    document.getElementById('restartButton').addEventListener('click', () => {
-        console.log("Bouton Rejouer cliqué. Réinitialisation du jeu.");
+    const restartButtonElement = document.getElementById('restartButton');
+    if (restartButtonElement) {
+        restartButtonElement.addEventListener('click', () => {
+            console.log("Bouton Rejouer cliqué. Réinitialisation du jeu.");
 
-        // Réinitialiser les variables du jeu
-        score = 0;
-        lives = 3;
-        cheeseCount = 0;
-        obstacles.length = 0;
-        platforms.length = 0;
-        cheeses.length = 0;
-        knives.length = 0; // Réinitialiser les couteaux
-        gameSpeed = 5;
-        obstacleInterval = obstacleIntervalBase;
-        platformInterval = platformIntervalBase;
-        cheeseInterval = cheeseIntervalBase;
-        lastObstacleTime = performance.now();
-        lastPlatformTime = performance.now();
-        lastCheeseTime = performance.now();
-        jumpCount = 0;
-        gameOver = false;
+            // Réinitialiser les variables du jeu
+            score = 0;
+            lives = 3;
+            cheeseCount = 0;
+            obstacles.length = 0;
+            platforms.length = 0;
+            cheeses.length = 0;
+            knives.length = 0; // Réinitialiser les couteaux
+            gameSpeed = 5;
+            obstacleInterval = obstacleIntervalBase;
+            platformInterval = platformIntervalBase;
+            cheeseInterval = cheeseIntervalBase;
+            lastObstacleTime = performance.now();
+            lastPlatformTime = performance.now();
+            lastCheeseTime = performance.now();
+            lastKnifeSpawnTime = performance.now();
+            lastKnifeSpawnTimeSet = false;
+            jumpCount = 0;
+            gameOver = false;
+            startTime = null; // Réinitialiser le temps de début
 
-        // Masquer le bouton Rejouer
-        const restartButton = document.getElementById('restartButton');
-        restartButton.style.display = 'none';
-        console.log("Bouton Rejouer masqué.");
+            // Masquer le bouton Rejouer
+            restartButtonElement.style.display = 'none';
+            console.log("Bouton Rejouer masqué.");
 
-        // Réinitialiser le canvas
-        resizeCanvas();
+            // Réinitialiser le canvas
+            resizeCanvas();
 
-        // Redémarrer la boucle de jeu
-        requestAnimationFrame(gameLoop);
-    });
+            // Réinitialiser les variables de couteaux
+            knives.length = 0;
+
+            // Redémarrer la boucle de jeu
+            requestAnimationFrame(gameLoop);
+        });
+    }
 
     /**************************************************
      * 30) Gestion de la Difficulté
@@ -866,24 +924,29 @@ document.addEventListener('DOMContentLoaded', () => {
     knifeImage.onload = () => {
         console.log("Image couteau chargée.");
     };
+    knifeImage.onerror = () => {
+        console.error("Erreur de chargement de knife.png");
+    };
 
     // 2. Tableau pour stocker les couteaux
     const knives = [];
 
     // 3. Définir l'intervalle de spawn des couteaux
-    const knifeSpawnIntervalBase = 5000; // ms (5 secondes)
-    let lastKnifeSpawnTime = 0;
+    // **IMPORTANT**: Cette variable est déjà déclarée en section 17. **Ne la déclarez pas à nouveau ici.**
+    // const knifeSpawnIntervalBase = 5000; // ms (5 secondes)
+    // let lastKnifeSpawnTimeSet = false; // Variable déjà déclarée en section 17
+    // let lastKnifeSpawnTime = 0; // Variable déjà déclarée en section 17
 
     // 4. Fonction pour spawn un couteau
     function spawnKnife() {
         knives.push({
             x: 800, // Position initiale à droite de l'écran
-            y: groundY - 50, // Ajustez selon la hauteur du sol et de l'image du couteau
-            width: 20, // Largeur du couteau
-            height: 90, // Hauteur du couteau
+            y: groundY - 60, // Position ajustée pour la nouvelle hauteur du couteau
+            width: 30, // Nouvelle largeur
+            height: 120, // Nouvelle hauteur
             oscillationAmplitude: 90, // Amplitude de l'oscillation
-            oscillationSpeed: 2, // Vitesse de l'oscillation (cycles par seconde)
-            initialY: groundY - 50, // Position de base pour l'oscillation
+            oscillationSpeed: 1, // Vitesse de l'oscillation (cycles par seconde)
+            initialY: groundY - 60, // Position de base pour l'oscillation
             time: 0 // Temps écoulé pour l'oscillation
         });
         console.log("Couteau spawné.");
@@ -891,6 +954,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 5. Fonction pour gérer le spawn des couteaux
     function manageKnives(timestamp) {
+        const elapsed = timestamp - startTime; // Temps écoulé depuis le début du jeu
+
+        if (elapsed < 20000) { // Avant 20 secondes, ne rien faire
+            return;
+        }
+
+        if (!lastKnifeSpawnTimeSet) {
+            spawnKnife(); // Spawn immédiat après 20 secondes
+            lastKnifeSpawnTime = timestamp;
+            lastKnifeSpawnTimeSet = true;
+            console.log("Premier couteau spawné après 20 secondes.");
+            return;
+        }
+
         if (timestamp - lastKnifeSpawnTime > knifeSpawnIntervalBase) {
             spawnKnife();
             lastKnifeSpawnTime = timestamp;
@@ -905,7 +982,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Déplacer le couteau vers la gauche
             knife.x -= gameSpeed;
             // Mettre à jour l'oscillation
-            knife.time += 0.05; // Ajustez pour changer la vitesse de l'oscillation
+            knife.time += 0.03; // Oscillation plus lente
             knife.y = knife.initialY + Math.sin(knife.time * knife.oscillationSpeed) * knife.oscillationAmplitude;
 
             // Supprimer le couteau s'il est hors écran
