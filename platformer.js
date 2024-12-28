@@ -6,100 +6,6 @@ const ctx = canvas.getContext('2d');
 
 const WIDTH = canvas.width;
 const HEIGHT = canvas.height;
-/**************************************************
- * Déclarations des sons
- **************************************************/
-// On crée des objets Audio pour nos 3 sons
-let music = new Audio("sounds/music.mp3");
-let outchSound = new Audio("sounds/outch.mp3");
-let jumpSound = new Audio("sounds/jump.mp3");
-
-// Paramètres
-music.loop = true;        // musique en boucle
-music.volume = 0.2;       // volume bas (20%)
-outchSound.volume = 1.0;  // volume normal
-jumpSound.volume = 1.0;   // volume normal
-
-// Optionnel : si vous voulez précharger, vous pouvez faire un .load()
-music.load();
-outchSound.load();
-jumpSound.load();
-
-/**************************************************
- * Démarrer la musique après un geste utilisateur
- **************************************************/
-function enableAudio() {
-  music.play().catch((err) => {
-    console.log("Impossible de jouer la musique : ", err);
-  });
-  // On retire cet écouteur pour ne pas rejouer la musique sans cesse
-  document.removeEventListener("keydown", enableAudio);
-  document.removeEventListener("mousedown", enableAudio);
-  document.removeEventListener("touchstart", enableAudio);
-}
-
-// On attend un geste : un clic, un appui clavier, un toucher
-document.addEventListener("keydown", enableAudio);
-document.addEventListener("mousedown", enableAudio);
-document.addEventListener("touchstart", enableAudio, { passive: false });
-
-/**************************************************
- * Utilisation des sons
- **************************************************/
-// 1) Son de saut : dans votre fonction handleJumpKey / handleTouchJump
-function handleJumpKey(e) {
-  if (e.code === "Space" || e.code === "ArrowUp") {
-    if (jumpCount < 2) {
-      if (jumpCount === 0) {
-        player.vy = -jumpStrength;
-      } else {
-        player.vy = -jumpStrength2;
-      }
-      jumpCount++;
-      player.jumping = true;
-      // ---> On joue le son de saut
-      jumpSound.currentTime = 0; // remet à zéro si le son était en cours
-      jumpSound.play();
-    }
-  }
-}
-
-function handleTouchJump(e) {
-  e.preventDefault();
-  if (jumpCount < 2) {
-    if (jumpCount === 0) {
-      player.vy = -jumpStrength;
-    } else {
-      player.vy = -jumpStrength2;
-    }
-    jumpCount++;
-    player.jumping = true;
-    // ---> Son de saut
-    jumpSound.currentTime = 0;
-    jumpSound.play();
-  }
-}
-
-// 2) Son de collision : dans checkCollisions(), quand on heurte un obstacle
-function checkCollisions() {
-  for (let obs of obstacles) {
-    if (isColliding(player, obs)) {
-      // Collision
-      lives--;
-      obstacles.splice(obstacles.indexOf(obs), 1);
-
-      // ---> On joue le son de collision
-      outchSound.currentTime = 0;
-      outchSound.play();
-
-      if (lives <= 0) {
-        gameOver = true;
-      }
-      return;
-    }
-  }
-}
-
 
 /**************************************************
  * 2) Images du Décor (Cross-Fade ou non)
@@ -113,7 +19,7 @@ background2.src = "images/background2.png";
 let bg1X = 0, bg2X = WIDTH;
 let backgroundSpeed = 2; // Décor lointain
 
-// Cross-fade
+// Cross-fade du décor
 let fade = 0;
 let fadeDuration = 500;
 let fadeStartTime = null;
@@ -147,13 +53,13 @@ const obstacles = [];
 let obstacleIntervalBase = 2000; 
 let obstacleInterval = obstacleIntervalBase;
 let lastObstacleTime = 0;
-let gameSpeed = 5;
+let gameSpeed = 5; // vitesse horizontale de défilement
 
 /**************************************************
  * 5) Plateformes
  **************************************************/
 const platformImage = new Image();
-platformImage.src = "images/plateforme1.png"; // 496×45
+platformImage.src = "images/plateforme1.png"; // ex. 496×45
 
 const platforms = [];
 const PLATFORM_WIDTH = 496;
@@ -176,7 +82,7 @@ let frameInterval = 100;
 let lastFrameTime = 0;
 
 /**************************************************
- * 7) Joueur : Coordonnées, Vitesse, Double-Saut
+ * 7) Joueur : coordonnées, vitesse, double-saut
  **************************************************/
 const player = {
   x: 50,
@@ -190,23 +96,23 @@ const player = {
 // Gravité
 const gravity = 0.5;
 
-// Saut principal
+// Premier saut
 const jumpStrength = 12;
 // Deuxième saut (moins fort)
 const jumpStrength2 = 8;
 
-// Combien de sauts on a déjà fait (0, 1 ou 2 max)
+// Nombre de sauts déjà effectués (0, 1 ou 2 max)
 let jumpCount = 0;
 
 /**************************************************
- * 8) Vies (3) + coeur life.png
+ * 8) Vies (3) + image de coeur (life.png)
  **************************************************/
 let lives = 3;
 const lifeImage = new Image();
 lifeImage.src = "images/life.png";
 
 /**************************************************
- * 9) État du jeu (score + gameOver)
+ * 9) État du jeu : score, gameOver
  **************************************************/
 let score = 0;
 let gameOver = false;
@@ -215,13 +121,13 @@ let gameOver = false;
  * 10) Timer de difficulté (toutes les 15s)
  **************************************************/
 let lastDifficultyIncrease = 0;
-let difficultyInterval = 15000; // 15s
+let difficultyInterval = 15000; // 15 secondes
 
 /**************************************************
- * 11) Collision "frôlable" (30%)
+ * 11) Collision “frôlable” (30%)
  **************************************************/
 function isColliding(a, b) {
-  const margin = 0.3; // Réduit la box de 30%
+  const margin = 0.3; // Réduit chaque boîte de 30%
 
   // Box réduite pour 'a'
   const shrinkWa = a.width * margin;
@@ -239,6 +145,7 @@ function isColliding(a, b) {
   const bw = b.width - shrinkWb;
   const bh = b.height - shrinkHb;
 
+  // Test AABB
   return (
     ax < bx + bw &&
     ax + aw > bx &&
@@ -248,38 +155,72 @@ function isColliding(a, b) {
 }
 
 /**************************************************
- * 12) Fromages (Items à ramasser)
+ * 12) Fromages (à ramasser)
  **************************************************/
-// Image du fromage
 const cheeseImage = new Image();
-cheeseImage.src = "images/fromage.png"; // dimension ?
+cheeseImage.src = "images/fromage.png";
 
-// Tableau des fromages
 const cheeses = [];
-let cheeseCount = 0; // combien de fromages ramassés
+let cheeseCount = 0; // nombre de fromages ramassés
 
-// Apparition aléatoire
+// Apparition (spawn) aléatoire
 let lastCheeseTime = 0;
-let cheeseIntervalBase = 3000; 
+let cheeseIntervalBase = 3000;
 let cheeseInterval = cheeseIntervalBase;
 
-// On peut décider d'une taille fixe pour le fromage
 const CHEESE_WIDTH = 32;
 const CHEESE_HEIGHT = 32;
 
-// Nombre de fromages requis pour gagner 1 vie
+// On gagne 1 vie tous les 20 fromages
 const CHEESES_FOR_EXTRA_LIFE = 20;
 
 /**************************************************
- * 13) Initialisation
+ * 13) Audio
+ **************************************************/
+// 3 sons : musique, collision, saut
+let music = new Audio("sounds/music.mp3");
+let outchSound = new Audio("sounds/outch.mp3");
+let jumpSound = new Audio("sounds/jump.mp3");
+
+// Config audio
+music.loop = true;
+music.volume = 0.2;    // musique plus faible
+outchSound.volume = 1.0;
+jumpSound.volume = 0.4;
+
+// On charge (optionnel)
+music.load();
+outchSound.load();
+jumpSound.load();
+
+// Démarrer la musique après interaction utilisateur
+function enableAudio() {
+  music.play().catch(err => {
+    console.log("Impossible de jouer la musique :", err);
+  });
+  // On retire ces écouteurs pour éviter de rejouer la musique sans cesse
+  document.removeEventListener("keydown", enableAudio);
+  document.removeEventListener("mousedown", enableAudio);
+  document.removeEventListener("touchstart", enableAudio);
+}
+document.addEventListener("keydown", enableAudio);
+document.addEventListener("mousedown", enableAudio);
+document.addEventListener("touchstart", enableAudio, { passive: false });
+
+/**************************************************
+ * 14) Initialisation du jeu
  **************************************************/
 function init() {
+  // Saut via clavier
   document.addEventListener('keydown', handleJumpKey);
+
+  // Saut via tactile
   document.addEventListener('touchstart', handleTouchJump, { passive: false });
 
-  // Charger les images
-  let totalImages = 2 + 2 + 3 + obstacleImages.length + 1 + 1 + 1; 
-  // +1 pour la platform, +1 pour la vie, +1 pour le fromage
+  // Charger toutes les images
+  let totalImages = 2 + 2 + 3 + obstacleImages.length + 1 + 1 + 1;
+  // 2 BG + 2 ground + 3 player + obstacle + 1 platform + 1 life + 1 cheese
+
   let loadedCount = 0;
 
   background1.onload = onImgLoad;
@@ -307,13 +248,14 @@ function init() {
   function onImgLoad() {
     loadedCount++;
     if (loadedCount === totalImages) {
+      // Tout est chargé, on démarre la boucle
       requestAnimationFrame(gameLoop);
     }
   }
 }
 
 /**************************************************
- * 14) Boucle de jeu
+ * 15) Boucle de jeu
  **************************************************/
 function gameLoop(timestamp) {
   if (gameOver) {
@@ -323,6 +265,7 @@ function gameLoop(timestamp) {
 
   ctx.clearRect(0, 0, WIDTH, HEIGHT);
 
+  // Cross-Fade du décor
   if (transitionActive) {
     updateFade(timestamp);
   }
@@ -350,10 +293,9 @@ function gameLoop(timestamp) {
   drawCheeses();
 
   // Collisions
-  checkCollisions();
-  checkCheeseCollisions(); // ramasser fromages
+  checkCollisions();        // obstacles
+  checkCheeseCollisions();  // fromages
 
-  // Score, Vies, Fromages
   afficherScore();
   afficherVies();
   afficherCheeseCount();
@@ -364,7 +306,7 @@ function gameLoop(timestamp) {
 }
 
 /**************************************************
- * 15) Cross-Fade (Décor & Sol)
+ * 16) Cross-Fade (Décor & Sol)
  **************************************************/
 function updateFade(timestamp) {
   if (!fadeStartTime) fadeStartTime = timestamp;
@@ -420,7 +362,7 @@ function drawGroundCrossFade() {
 }
 
 /**************************************************
- * 16) Joueur
+ * 17) Joueur
  **************************************************/
 function updatePlayer(timestamp) {
   // Animation
@@ -441,7 +383,7 @@ function updatePlayer(timestamp) {
     jumpCount = 0;
   }
 
-  // Plateforme
+  // Plateforme (si on descend)
   if (player.vy >= 0) {
     platforms.forEach(p => {
       if (
@@ -452,7 +394,7 @@ function updatePlayer(timestamp) {
           player.y + player.height >= p.y &&
           player.y + player.height <= p.y + p.height
         ) {
-          // Atterrissage
+          // Atterrissage sur la plateforme
           player.y = p.y - player.height;
           player.vy = 0;
           player.jumping = false;
@@ -474,16 +416,18 @@ function drawPlayer() {
 }
 
 /**************************************************
- * 17) Double-Saut
+ * 18) Double-Saut
  **************************************************/
 function handleJumpKey(e) {
   if (e.code === "Space" || e.code === "ArrowUp") {
     if (jumpCount < 2) {
+      // Son de saut
+      jumpSound.currentTime = 0;
+      jumpSound.play();
+
       if (jumpCount === 0) {
-        // Premier saut
         player.vy = -jumpStrength;
       } else {
-        // Deuxième saut moins fort
         player.vy = -jumpStrength2;
       }
       jumpCount++;
@@ -495,6 +439,10 @@ function handleJumpKey(e) {
 function handleTouchJump(e) {
   e.preventDefault();
   if (jumpCount < 2) {
+    // Son de saut
+    jumpSound.currentTime = 0;
+    jumpSound.play();
+
     if (jumpCount === 0) {
       player.vy = -jumpStrength;
     } else {
@@ -506,7 +454,7 @@ function handleTouchJump(e) {
 }
 
 /**************************************************
- * 18) Plateformes
+ * 19) Plateformes
  **************************************************/
 function spawnPlatform() {
   let spawnY = 150 + Math.random() * 100; 
@@ -522,15 +470,15 @@ function managePlatforms(timestamp) {
   if (timestamp - lastPlatformTime > platformInterval) {
     spawnPlatform();
     lastPlatformTime = timestamp;
-    // interval aléatoire 3–6s
+    // interval aléatoire entre 3s et 6s
     platformInterval = 3000 + Math.random() * 3000;
   }
 }
 
 function updatePlatforms() {
-  for (let i = 0; i < platforms.length; i++) {
-    platforms[i].x -= gameSpeed;
-  }
+  platforms.forEach(p => {
+    p.x -= gameSpeed;
+  });
   for (let i = platforms.length - 1; i >= 0; i--) {
     if (platforms[i].x + platforms[i].width < 0) {
       platforms.splice(i, 1);
@@ -545,7 +493,7 @@ function drawPlatforms() {
 }
 
 /**************************************************
- * 19) Obstacles
+ * 20) Obstacles
  **************************************************/
 function manageObstacles(timestamp) {
   if (timestamp - lastObstacleTime > obstacleInterval) {
@@ -583,11 +531,15 @@ function drawObstacles() {
 }
 
 /**************************************************
- * 20) Collisions (obstacles) => Perte de vie
+ * 21) Collisions (obstacles) => Perte de vie
  **************************************************/
 function checkCollisions() {
   for (let obs of obstacles) {
     if (isColliding(player, obs)) {
+      // Son de collision
+      outchSound.currentTime = 0;
+      outchSound.play();
+
       // On perd 1 vie
       lives--;
       obstacles.splice(obstacles.indexOf(obs), 1);
@@ -601,23 +553,20 @@ function checkCollisions() {
 }
 
 /**************************************************
- * 21) Fromages
+ * 22) Fromages
  **************************************************/
-// On peut décider d'apparitions aléatoires
 function manageCheeses(timestamp) {
   if (timestamp - lastCheeseTime > cheeseInterval) {
     spawnCheese();
     lastCheeseTime = timestamp;
-    // interval aléatoire 2–5s
+    // interval 2–5s
     cheeseInterval = 2000 + Math.random() * 3000;
   }
 }
 
-// Crée un fromage sur le sol ou un peu plus haut
 function spawnCheese() {
-  // On peut décider de le mettre à x=WIDTH + random offset
-  // y= (par ex) entre groundY - 100 et groundY - 32
-  const spawnY = groundY - 32 - Math.random() * 100; 
+  // position sur le sol ou un peu plus haut
+  const spawnY = groundY - 32 - Math.random() * 100;
   cheeses.push({
     x: WIDTH,
     y: spawnY,
@@ -644,7 +593,7 @@ function drawCheeses() {
 }
 
 /**************************************************
- * 22) Collision avec Fromage
+ * 23) Collision avec Fromages
  **************************************************/
 function checkCheeseCollisions() {
   for (let i = cheeses.length - 1; i >= 0; i--) {
@@ -654,10 +603,10 @@ function checkCheeseCollisions() {
       cheeseCount++;
       cheeses.splice(i, 1);
 
-      // À 20 fromages, on gagne 1 vie
-      if (cheeseCount % CHEESES_FOR_EXTRA_LIFE === 0) {
+      // Tous les 20 fromages => +1 vie
+      if (cheeseCount % 20 === 0) {
         lives++;
-        // Optionnel : on peut fixer un max de vies (ex. 5)
+        // Option : limiter le max de vies
         // if (lives > 5) lives = 5;
       }
     }
@@ -665,7 +614,7 @@ function checkCheeseCollisions() {
 }
 
 /**************************************************
- * 23) Affichage Score, Vies et Fromages
+ * 24) Affichage : score, vies, fromages
  **************************************************/
 function afficherScore() {
   ctx.fillStyle = "black";
@@ -673,7 +622,6 @@ function afficherScore() {
   ctx.fillText("Score : " + score, 20, 30);
 }
 
-// On affiche 3 coeurs (ou plus si on dépasse)
 function afficherVies() {
   const heartSize = 30;
   const margin = 10;
@@ -682,7 +630,6 @@ function afficherVies() {
   }
 }
 
-// Affiche le nb de fromages
 function afficherCheeseCount() {
   ctx.fillStyle = "black";
   ctx.font = "20px Arial";
@@ -690,7 +637,7 @@ function afficherCheeseCount() {
 }
 
 /**************************************************
- * 24) Fin de jeu
+ * 25) Fin de jeu
  **************************************************/
 function afficherGameOver() {
   ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
@@ -705,7 +652,7 @@ function afficherGameOver() {
 }
 
 /**************************************************
- * 25) Difficulté
+ * 26) Difficulté
  **************************************************/
 function handleDifficulty(timestamp) {
   if (timestamp - lastDifficultyIncrease > difficultyInterval) {
@@ -718,7 +665,7 @@ function handleDifficulty(timestamp) {
     // plateformes plus fréquentes
     platformIntervalBase = Math.max(2000, platformIntervalBase - 500);
 
-    // fromages plus fréquents ?
+    // fromages plus fréquents
     cheeseIntervalBase = Math.max(1000, cheeseIntervalBase - 200);
 
     lastDifficultyIncrease = timestamp;
@@ -726,6 +673,6 @@ function handleDifficulty(timestamp) {
 }
 
 /**************************************************
- * 26) Lancement
+ * 27) Lancement
  **************************************************/
 init();
