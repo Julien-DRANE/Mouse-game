@@ -19,7 +19,7 @@ background2.src = "images/background2.png";
 let bg1X = 0, bg2X = WIDTH;
 let backgroundSpeed = 2; // Décor lointain
 
-// Cross-fade du décor
+// Cross-fade décor
 let fade = 0;
 let fadeDuration = 500;
 let fadeStartTime = null;
@@ -186,7 +186,7 @@ let jumpSound = new Audio("sounds/jump.mp3");
 music.loop = true;
 music.volume = 0.2;    // musique plus faible
 outchSound.volume = 1.0;
-jumpSound.volume = 0.4;
+jumpSound.volume = 1.0;
 
 // On charge (optionnel)
 music.load();
@@ -546,6 +546,7 @@ function checkCollisions() {
 
       if (lives <= 0) {
         gameOver = true;
+        afficherRestartButton();
       }
       return; 
     }
@@ -566,7 +567,7 @@ function manageCheeses(timestamp) {
 
 function spawnCheese() {
   // position sur le sol ou un peu plus haut
-  const spawnY = groundY - 32 - Math.random() * 100;
+  const spawnY = groundY - CHEESE_HEIGHT - Math.random() * 100;
   cheeses.push({
     x: WIDTH,
     y: spawnY,
@@ -604,10 +605,8 @@ function checkCheeseCollisions() {
       cheeses.splice(i, 1);
 
       // Tous les 20 fromages => +1 vie
-      if (cheeseCount % 20 === 0) {
+      if (cheeseCount % CHEESES_FOR_EXTRA_LIFE === 0) {
         lives++;
-        // Option : limiter le max de vies
-        // if (lives > 5) lives = 5;
       }
     }
   }
@@ -626,7 +625,7 @@ function afficherVies() {
   const heartSize = 30;
   const margin = 10;
   for (let i = 0; i < lives; i++) {
-    ctx.drawImage(lifeImage, 20 + i*(heartSize+margin), 60, heartSize, heartSize);
+    ctx.drawImage(lifeImage, 20 + i*(heartSize + margin), 60, heartSize, heartSize);
   }
 }
 
@@ -649,10 +648,46 @@ function afficherGameOver() {
 
   ctx.font = "20px Arial";
   ctx.fillText("Score final : " + score, WIDTH / 2 - 60, HEIGHT / 2 + 40);
+
+  afficherRestartButton();
 }
 
 /**************************************************
- * 26) Difficulté
+ * 26) Afficher le bouton Rejouer
+ **************************************************/
+function afficherRestartButton() {
+  const restartButton = document.getElementById('restartButton');
+  restartButton.style.display = 'block';
+}
+
+// Ajout d'un écouteur pour le bouton Rejouer
+document.getElementById('restartButton').addEventListener('click', () => {
+  // Réinitialiser les variables du jeu
+  score = 0;
+  lives = 3;
+  cheeseCount = 0;
+  obstacles.length = 0;
+  platforms.length = 0;
+  cheeses.length = 0;
+  gameSpeed = 5;
+  obstacleInterval = obstacleIntervalBase;
+  platformInterval = platformIntervalBase;
+  cheeseInterval = cheeseIntervalBase;
+  lastObstacleTime = performance.now();
+  lastPlatformTime = performance.now();
+  lastCheeseTime = performance.now();
+  jumpCount = 0;
+  gameOver = false;
+
+  // Masquer le bouton Rejouer
+  restartButton.style.display = 'none';
+
+  // Redémarrer la boucle de jeu
+  requestAnimationFrame(gameLoop);
+});
+
+/**************************************************
+ * 27) Difficulté
  **************************************************/
 function handleDifficulty(timestamp) {
   if (timestamp - lastDifficultyIncrease > difficultyInterval) {
@@ -673,6 +708,6 @@ function handleDifficulty(timestamp) {
 }
 
 /**************************************************
- * 27) Lancement
+ * 28) Lancement
  **************************************************/
 init();

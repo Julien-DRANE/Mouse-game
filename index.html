@@ -4,25 +4,22 @@
   <meta charset="UTF-8">
   <title>Petit Jeu de Plateforme - Vies, Plateformes & Difficulté</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
-  <style>
-    body {
-      margin: 0;
-      padding: 0;
-      background: #eee;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-    }
-    canvas {
-      border: 2px solid #000;
-    }
-  </style>
+  
+  <!-- Lien vers le fichier CSS externe -->
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <!-- Canvas fixe 800x400 (pour la démo) -->
   <canvas id="gameCanvas" width="800" height="400"></canvas>
-
+  
+  <!-- Message de rotation, affiché en portrait -->
+  <div id="rotateMessage">
+    Veuillez pivoter votre appareil en mode paysage.
+  </div>
+  
+  <!-- Bouton Rejouer, affiché en game over -->
+  <button id="restartButton">Rejouer</button>
+  
   <!-- Script principal du jeu -->
   <script src="platformer.js"></script>
 </body>

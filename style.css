@@ -1,66 +1,65 @@
 /* Empêche marges & scroll */
 html, body {
-    margin: 0;
-    padding: 0;
-    width: 100%;
-    height: 100%;
-    background: #eee;
-    overflow: hidden;
-    /* Tente de faire un mode paysage natif */
-  }
-  
-  /* Affiche un message si on est en portrait sur mobile */
-  /* .mobile est éventuellement ajoutée en JS si on détecte un mobile */
-  @media screen and (orientation: portrait) {
-    /* On masque le canvas et on affiche le rotateMessage */
-    #gameCanvas {
-      display: none;
-    }
-    #rotateMessage {
-      display: flex;
-    }
-  }
-  
-  @media screen and (orientation: landscape) {
-    #gameCanvas {
-      display: block;
-    }
-    #rotateMessage {
-      display: none;
-    }
-  }
-  
-  /* Centre le canvas si visible */
-  body {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    flex-direction: column; /* Pour que le bouton soit en-dessous */
-  }
-  
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  background: #eee;
+  overflow: hidden;
+}
+
+/* Affiche un message si on est en portrait sur mobile */
+@media screen and (orientation: portrait) {
+  /* On masque le canvas et on affiche le rotateMessage */
   #gameCanvas {
-    border: 2px solid #000;
+      display: none;
   }
-  
-  /* Le message de rotation, centré en plein écran */
   #rotateMessage {
-    display: none; /* On l'affiche seulement en portrait */
-    position: absolute;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    background: rgba(0,0,0,0.8);
-    color: #fff;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
+      display: flex;
   }
-  
-  /* Bouton Rejouer masqué par défaut */
-  #restartButton {
-    display: none; 
-    margin-top: 10px;
-    padding: 10px 20px;
-    font-size: 16px;
-    cursor: pointer;
+}
+
+@media screen and (orientation: landscape) {
+  #gameCanvas {
+      display: block;
   }
-  
+  #rotateMessage {
+      display: none;
+  }
+}
+
+/* Centre le canvas si visible */
+body {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column; /* Pour que le bouton soit en-dessous */
+}
+
+#gameCanvas {
+  border: 2px solid #000;
+}
+
+/* Le message de rotation, centré en plein écran */
+#rotateMessage {
+  display: none; /* On l'affiche seulement en portrait */
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.8);
+  color: #fff;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  font-size: 24px;
+  padding: 20px;
+}
+
+/* Bouton Rejouer masqué par défaut */
+#restartButton {
+  display: none; 
+  margin-top: 10px;
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
+}
