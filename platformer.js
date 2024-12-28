@@ -144,7 +144,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const CHEESE_HEIGHT = 32;
 
   // On gagne 1 vie tous les 20 fromages
-  const CHEESES_FOR_EXTRA_LIFE = 20;
+  const CHEESES_FOR_EXTRA_LIFE = 10;
 
   /**************************************************
    * 12) Audio
