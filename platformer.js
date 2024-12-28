@@ -879,9 +879,9 @@ document.addEventListener('DOMContentLoaded', () => {
         knives.push({
             x: 800, // Position initiale à droite de l'écran
             y: groundY - 50, // Ajustez selon la hauteur du sol et de l'image du couteau
-            width: 50, // Largeur du couteau
-            height: 50, // Hauteur du couteau
-            oscillationAmplitude: 30, // Amplitude de l'oscillation
+            width: 20, // Largeur du couteau
+            height: 90, // Hauteur du couteau
+            oscillationAmplitude: 90, // Amplitude de l'oscillation
             oscillationSpeed: 2, // Vitesse de l'oscillation (cycles par seconde)
             initialY: groundY - 50, // Position de base pour l'oscillation
             time: 0 // Temps écoulé pour l'oscillation
