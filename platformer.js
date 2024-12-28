@@ -4,6 +4,11 @@
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
+// Variables globales pour l'échelle et les dimensions
+let scaleFactor = 1;
+let WIDTH = canvas.width;
+let HEIGHT = canvas.height;
+
 // Fonction pour redimensionner le canvas en fonction de la fenêtre
 function resizeCanvas() {
   // Définir un ratio pour maintenir l'aspect du jeu (ex. 800x400)
@@ -19,13 +24,13 @@ function resizeCanvas() {
   // Mettre à jour les variables de jeu basées sur le scale
   // Ceci assure que les éléments du jeu s'adaptent à la nouvelle taille
   scaleFactor = scale;
+  WIDTH = canvas.width;
+  HEIGHT = canvas.height;
+  console.log(`Canvas redimensionné : width=${WIDTH}, height=${HEIGHT}, scaleFactor=${scaleFactor}`);
 }
 
 window.addEventListener('resize', resizeCanvas);
 resizeCanvas();
-
-// Variables globales pour l'échelle
-let scaleFactor = 1;
 
 /**************************************************
  * 2) Images du Décor (Cross-Fade ou non)
@@ -106,7 +111,7 @@ let lastFrameTime = 0;
  **************************************************/
 const player = {
   x: 50,
-  y: HEIGHT - 100,
+  y: HEIGHT - 100, // Utilise la variable HEIGHT correctement définie
   width: 50,
   height: 50,
   vy: 0,
@@ -246,7 +251,9 @@ function init() {
 
   // Charger toutes les images
   let totalImages = 2 + 2 + 3 + obstacleImages.length + 1 + 1 + 1;
-  // 2 BG + 2 ground + 3 player + obstacle + 1 platform + 1 life + 1 cheese
+  // 2 BG + 2 ground + 3 player + obstacle + 1 platform + 1 life + 1 cheese = 11
+
+  console.log(`Total images à charger : ${totalImages}`);
 
   let loadedCount = 0;
 
@@ -258,9 +265,13 @@ function init() {
   lifeImage.onload = onImgLoad;
   cheeseImage.onload = onImgLoad;
 
-  playerImages.forEach(img => {
-    img.onload = onImgLoad;
+  playerImages.forEach((img, index) => {
+    img.onload = () => {
+      console.log(`Image joueur ${index + 1} chargée`);
+      onImgLoad();
+    };
   });
+
   obstacleImages.forEach((obs, i) => {
     const img = new Image();
     img.src = obs.src;
@@ -269,12 +280,15 @@ function init() {
       width: obs.width,
       height: obs.height
     };
-    img.onload = onImgLoad;
+    img.onload = () => {
+      console.log(`Obstacle ${i + 1} chargé`);
+      onImgLoad();
+    };
   });
 
   function onImgLoad() {
     loadedCount++;
-    console.log(`Image chargée: ${loadedCount}/${totalImages}`);
+    console.log(`Image chargée : ${loadedCount}/${totalImages}`);
     if (loadedCount === totalImages) {
       console.log("Toutes les images sont chargées. Démarrage de la boucle de jeu.");
       requestAnimationFrame(gameLoop);
@@ -343,6 +357,7 @@ function updateFade(timestamp) {
   if (fade >= 1) {
     fade = 1;
     transitionActive = false;
+    console.log("Transition du décor terminée.");
   }
 }
 
@@ -458,7 +473,11 @@ function handleJumpKey(e) {
     if (jumpCount < 2) {
       // Son de saut
       jumpSound.currentTime = 0;
-      jumpSound.play();
+      jumpSound.play().then(() => {
+        console.log("Son de saut joué.");
+      }).catch(err => {
+        console.log("Erreur lors de la lecture du son de saut :", err);
+      });
 
       if (jumpCount === 0) {
         player.vy = -jumpStrength;
@@ -477,7 +496,11 @@ function handleTouchJump(e) {
   if (jumpCount < 2) {
     // Son de saut
     jumpSound.currentTime = 0;
-    jumpSound.play();
+    jumpSound.play().then(() => {
+      console.log("Son de saut joué.");
+    }).catch(err => {
+      console.log("Erreur lors de la lecture du son de saut :", err);
+    });
 
     if (jumpCount === 0) {
       player.vy = -jumpStrength;
@@ -501,6 +524,7 @@ function spawnPlatform() {
     width: PLATFORM_WIDTH,
     height: PLATFORM_HEIGHT
   });
+  console.log(`Plateforme créée à Y=${spawnY}`);
 }
 
 function managePlatforms(timestamp) {
@@ -509,7 +533,7 @@ function managePlatforms(timestamp) {
     lastPlatformTime = timestamp;
     // Interval aléatoire entre 3s et 6s
     platformInterval = 3000 + Math.random() * 3000;
-    console.log(`Plateforme créée à Y=${platforms[platforms.length -1].y}`);
+    console.log(`Nouvel intervalle de plateforme : ${platformInterval}ms`);
   }
 }
 
@@ -585,12 +609,17 @@ function checkCollisions() {
     if (isColliding(player, obs)) {
       // Son de collision
       outchSound.currentTime = 0;
-      outchSound.play();
+      outchSound.play().then(() => {
+        console.log("Son de collision joué.");
+      }).catch(err => {
+        console.log("Erreur lors de la lecture du son de collision :", err);
+      });
       console.log("Collision avec un obstacle");
 
       // On perd 1 vie
       lives--;
       obstacles.splice(obstacles.indexOf(obs), 1);
+      console.log(`Vie perdue. Vies restantes : ${lives}`);
 
       if (lives <= 0) {
         gameOver = true;
@@ -611,7 +640,7 @@ function manageCheeses(timestamp) {
     lastCheeseTime = timestamp;
     // Interval 2–5s
     cheeseInterval = 2000 + Math.random() * 3000;
-    console.log("Fromage créé");
+    console.log(`Nouvel intervalle de fromage : ${cheeseInterval}ms`);
   }
 }
 
@@ -658,12 +687,12 @@ function checkCheeseCollisions() {
       // Ramasse le fromage
       cheeseCount++;
       cheeses.splice(i, 1);
-      console.log(`Fromage ramassé. Total: ${cheeseCount}`);
+      console.log(`Fromage ramassé. Total : ${cheeseCount}`);
 
       // Tous les 20 fromages => +1 vie
       if (cheeseCount % CHEESES_FOR_EXTRA_LIFE === 0) {
         lives++;
-        console.log(`Vie supplémentaire! Total vies: ${lives}`);
+        console.log(`Vie supplémentaire! Total vies : ${lives}`);
       }
     }
   }
@@ -725,6 +754,7 @@ function afficherGameOver() {
 function afficherRestartButton() {
   const restartButton = document.getElementById('restartButton');
   restartButton.style.display = 'block';
+  console.log("Bouton Rejouer affiché.");
 }
 
 /**************************************************
@@ -753,6 +783,7 @@ document.getElementById('restartButton').addEventListener('click', () => {
   // Masquer le bouton Rejouer
   const restartButton = document.getElementById('restartButton');
   restartButton.style.display = 'none';
+  console.log("Bouton Rejouer masqué.");
 
   // Redémarrer la boucle de jeu
   requestAnimationFrame(gameLoop);
@@ -765,19 +796,19 @@ function handleDifficulty(timestamp) {
   if (timestamp - lastDifficultyIncrease > difficultyInterval) {
     // Augmenter la vitesse
     gameSpeed += 1;
-    console.log(`Vitesse du jeu augmentée. Nouvelle vitesse: ${gameSpeed}`);
+    console.log(`Vitesse du jeu augmentée. Nouvelle vitesse : ${gameSpeed}`);
 
     // Obstacles plus fréquents
     obstacleIntervalBase = Math.max(500, obstacleIntervalBase - 200);
-    console.log(`Intervalle des obstacles ajusté à: ${obstacleIntervalBase}ms`);
+    console.log(`Intervalle des obstacles ajusté à : ${obstacleIntervalBase}ms`);
 
     // Plateformes plus fréquentes
     platformIntervalBase = Math.max(2000, platformIntervalBase - 500);
-    console.log(`Intervalle des plateformes ajusté à: ${platformIntervalBase}ms`);
+    console.log(`Intervalle des plateformes ajusté à : ${platformIntervalBase}ms`);
 
     // Fromages plus fréquents
     cheeseIntervalBase = Math.max(1000, cheeseIntervalBase - 200);
-    console.log(`Intervalle des fromages ajusté à: ${cheeseIntervalBase}ms`);
+    console.log(`Intervalle des fromages ajusté à : ${cheeseIntervalBase}ms`);
 
     lastDifficultyIncrease = timestamp;
   }
