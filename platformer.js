@@ -145,7 +145,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const CHEESE_WIDTH = 32;
     const CHEESE_HEIGHT = 32;
 
-    // On gagne 1 vie tous les 20 fromages
+    // On gagne 1 vie tous les 10 fromages
     const CHEESES_FOR_EXTRA_LIFE = 10;
 
     /**************************************************
@@ -364,9 +364,15 @@ document.addEventListener('DOMContentLoaded', () => {
         updateCheeses();
         drawCheeses();
 
+        // Gestion des couteaux
+        manageKnives(timestamp);
+        updateKnives();
+        drawKnives();
+
         // Collisions
         checkCollisions();        // Obstacles
         checkCheeseCollisions();  // Fromages
+        checkKnifeCollisions();   // Couteaux
 
         afficherScore();
         afficherVies();
@@ -593,20 +599,28 @@ document.addEventListener('DOMContentLoaded', () => {
      **************************************************/
     function manageObstacles(timestamp) {
         if (timestamp - lastObstacleTime > obstacleInterval) {
-            let randIndex = Math.floor(Math.random() * loadedObstacleImages.length);
-            let obsData = loadedObstacleImages[randIndex];
-            obstacles.push({
-                x: 800,
-                y: groundY - obsData.height,
-                width: obsData.width,
-                height: obsData.height,
-                image: obsData.image
-            });
-
+            if (loadedObstacleImages.length === 0) {
+                console.log("Aucune image d'obstacle chargée.");
+                return;
+            }
+            spawnObstacle();
             lastObstacleTime = timestamp;
             obstacleInterval = obstacleIntervalBase / 2 + Math.random() * obstacleIntervalBase;
             console.log("Obstacle créé");
         }
+    }
+
+    function spawnObstacle() {
+        let randIndex = Math.floor(Math.random() * loadedObstacleImages.length);
+        let obsData = loadedObstacleImages[randIndex];
+        obstacles.push({
+            x: 800,
+            y: groundY - obsData.height,
+            width: obsData.width,
+            height: obsData.height,
+            image: obsData.image
+        });
+        console.log("Obstacle créé");
     }
 
     function updateObstacles() {
@@ -718,7 +732,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 cheeses.splice(i, 1);
                 console.log(`Fromage ramassé. Total : ${cheeseCount}`);
 
-                // Tous les 20 fromages => +1 vie
+                // Tous les 10 fromages => +1 vie
                 if (cheeseCount % CHEESES_FOR_EXTRA_LIFE === 0) {
                     lives++;
                     console.log(`Vie supplémentaire! Total vies : ${lives}`);
@@ -762,20 +776,29 @@ document.addEventListener('DOMContentLoaded', () => {
     /**************************************************
      * 27) Fin de jeu
      **************************************************/
-    // Redirection gérée directement dans gameLoop()
+    // La redirection est gérée directement dans la boucle de jeu (gameLoop)
 
     /**************************************************
      * 28) Afficher le bouton Rejouer (optionnel)
      **************************************************/
+    // Si vous souhaitez conserver un bouton de redémarrage en plus de la redirection, vous pouvez conserver cette fonction.
+    // Cependant, pour la redirection automatique, cette partie n'est pas nécessaire.
+
     function afficherRestartButton() {
         const restartButton = document.getElementById('restartButton');
-        restartButton.style.display = 'block';
-        console.log("Bouton Rejouer affiché.");
+        if (restartButton) {
+            restartButton.style.display = 'block';
+            console.log("Bouton Rejouer affiché.");
+        } else {
+            console.log("Element 'restartButton' non trouvé.");
+        }
     }
 
     /**************************************************
      * 29) Gestion du Bouton Rejouer
      **************************************************/
+    // Si vous choisissez de conserver le bouton de redémarrage, assurez-vous que la redirection automatique n'interfère pas avec lui.
+
     document.getElementById('restartButton').addEventListener('click', () => {
         console.log("Bouton Rejouer cliqué. Réinitialisation du jeu.");
 
@@ -786,6 +809,7 @@ document.addEventListener('DOMContentLoaded', () => {
         obstacles.length = 0;
         platforms.length = 0;
         cheeses.length = 0;
+        knives.length = 0; // Réinitialiser les couteaux
         gameSpeed = 5;
         obstacleInterval = obstacleIntervalBase;
         platformInterval = platformIntervalBase;
@@ -834,7 +858,111 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /**************************************************
-     * 31) Lancement
+     * 32) Ajout de la Mécanique des Couteaux
+     **************************************************/
+    // 1. Charger l'image du couteau
+    const knifeImage = new Image();
+    knifeImage.src = "images/knife.png";
+    knifeImage.onload = () => {
+        console.log("Image couteau chargée.");
+    };
+
+    // 2. Tableau pour stocker les couteaux
+    const knives = [];
+
+    // 3. Définir l'intervalle de spawn des couteaux
+    const knifeSpawnIntervalBase = 5000; // ms (5 secondes)
+    let lastKnifeSpawnTime = 0;
+
+    // 4. Fonction pour spawn un couteau
+    function spawnKnife() {
+        knives.push({
+            x: 800, // Position initiale à droite de l'écran
+            y: groundY - 50, // Ajustez selon la hauteur du sol et de l'image du couteau
+            width: 50, // Largeur du couteau
+            height: 50, // Hauteur du couteau
+            oscillationAmplitude: 30, // Amplitude de l'oscillation
+            oscillationSpeed: 2, // Vitesse de l'oscillation (cycles par seconde)
+            initialY: groundY - 50, // Position de base pour l'oscillation
+            time: 0 // Temps écoulé pour l'oscillation
+        });
+        console.log("Couteau spawné.");
+    }
+
+    // 5. Fonction pour gérer le spawn des couteaux
+    function manageKnives(timestamp) {
+        if (timestamp - lastKnifeSpawnTime > knifeSpawnIntervalBase) {
+            spawnKnife();
+            lastKnifeSpawnTime = timestamp;
+            console.log(`Prochain spawn de couteau dans ${knifeSpawnIntervalBase}ms`);
+        }
+    }
+
+    // 6. Fonction pour mettre à jour les couteaux
+    function updateKnives() {
+        for (let i = knives.length - 1; i >= 0; i--) {
+            let knife = knives[i];
+            // Déplacer le couteau vers la gauche
+            knife.x -= gameSpeed;
+            // Mettre à jour l'oscillation
+            knife.time += 0.05; // Ajustez pour changer la vitesse de l'oscillation
+            knife.y = knife.initialY + Math.sin(knife.time * knife.oscillationSpeed) * knife.oscillationAmplitude;
+
+            // Supprimer le couteau s'il est hors écran
+            if (knife.x + knife.width < 0) {
+                knives.splice(i, 1);
+                console.log("Couteau supprimé (hors écran).");
+            }
+        }
+    }
+
+    // 7. Fonction pour dessiner les couteaux
+    function drawKnives() {
+        ctx.save();
+        ctx.scale(scaleFactor, scaleFactor); // Appliquer l'échelle
+        knives.forEach(knife => {
+            ctx.drawImage(knifeImage, knife.x, knife.y, knife.width, knife.height);
+        });
+        ctx.restore();
+    }
+
+    /**************************************************
+     * 33) Collision avec les Couteaux
+     **************************************************/
+    function checkKnifeCollisions() {
+        for (let i = knives.length - 1; i >= 0; i--) {
+            let knife = knives[i];
+            if (isColliding(player, knife)) {
+                // Son de collision
+                outchSound.currentTime = 0;
+                outchSound.play().then(() => {
+                    console.log("Son de collision joué.");
+                }).catch(err => {
+                    console.log("Erreur lors de la lecture du son de collision :", err);
+                });
+                console.log("Collision avec un couteau");
+
+                // On perd 1 vie
+                lives--;
+                knives.splice(i, 1);
+                console.log(`Vie perdue via couteau. Vies restantes : ${lives}`);
+
+                if (lives <= 0) {
+                    gameOver = true;
+                    console.log("Game Over");
+                }
+                // Pas de 'return' ici pour permettre de vérifier toutes les collisions
+            }
+        }
+    }
+
+    /**************************************************
+     * 34) Fonction de Boucle de Jeu (mise à jour)
+     **************************************************/
+    // Déjà défini ci-dessus
+
+    /**************************************************
+     * 35) Lancement
      **************************************************/
     init();
 
