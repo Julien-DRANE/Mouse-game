@@ -943,8 +943,8 @@ document.addEventListener('DOMContentLoaded', () => {
             x: 800, // Position initiale à droite de l'écran
             y: groundY - 60, // Position ajustée pour la nouvelle hauteur du couteau
             width: 30, // Nouvelle largeur
-            height: 120, // Nouvelle hauteur
-            oscillationAmplitude: 90, // Amplitude de l'oscillation
+            height: 140, // Nouvelle hauteur
+            oscillationAmplitude: 120, // Amplitude de l'oscillation
             oscillationSpeed: 1, // Vitesse de l'oscillation (cycles par seconde)
             initialY: groundY - 60, // Position de base pour l'oscillation
             time: 0 // Temps écoulé pour l'oscillation
